@@ -5823,3 +5823,13 @@
 - Implemented `extractSourceBlocks` for headings, paragraphs, lists, tables, quotes, code fences, thematic breaks, and html blocks.
 - Verification: `pnpm build` passed; `pnpm test:unit` passed with 2 tests.
 - Next: commit/push M1 checkpoint, then continue M2 faithful render pipeline.
+
+
+## 2026-05-15T10:16:15 — M2 faithful preview checkpoint
+
+- Added tests for faithful compile/render source-map invariants before implementation (`pnpm test:invariant` failed because `compileMarkdownToHtml` was missing).
+- Implemented deterministic faithful RenderPlan and HTML renderer.
+- Added iframe preview baseline in the React app with sandbox `allow-scripts`.
+- Implemented source metadata export switch behavior at renderer level.
+- Verification: `pnpm build` passed; `pnpm test:unit` passed with 5 tests.
+- Next: add toolbar/theme/i18n controls and Playwright E2E coverage.
