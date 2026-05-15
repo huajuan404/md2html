@@ -5871,3 +5871,11 @@
 - Added Playwright config and E2E coverage for first open, paste/upload, preset axis sync, metadata download behavior, source click mapping, and UI-language no-output-change.
 - Verification: `pnpm test:e2e` passed with 6 tests.
 - Next: add README/open-source polish, run completion audit against PRD/ACCEPTANCE, and fill any remaining gaps.
+
+
+## 2026-05-15T10:25:07 — open-source polish checkpoint
+
+- Added top-level README with quickstart, verification commands, thesis, and doc pointers.
+- Added MIT LICENSE.
+- Added GitHub Actions CI for install, Playwright browser install, build, unit tests, and E2E tests.
+- Next: run full audit and decide whether any acceptance gaps must be closed before final handoff.
