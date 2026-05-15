@@ -47,7 +47,7 @@ export function App() {
   const [modelStatus, setModelStatus] = useState<ModelStatus>({ state: 'deterministic' })
   const [relayoutNonce, setRelayoutNonce] = useState(0)
 
-  const lastModelShapeRef = useRef<string | undefined>(undefined)
+  const lastModelCacheKeyRef = useRef<string | undefined>(undefined)
   const lastModelPlanRef = useRef<RenderPlan | undefined>(undefined)
   const t = getUiDict(uiLanguage)
 
@@ -58,6 +58,7 @@ export function App() {
     contentLanguage,
     includeSourceMetadata,
   }), [axes, contentLanguage, includeSourceMetadata])
+  const modelCacheKey = `${shape}::${axes.logic}::${axes.density}::${contentLanguage}`
 
   const result = useMemo(
     () => compileMarkdownToHtml(markdown, { ...compileOptions, includeSourceMetadata: true }, { renderPlanOverride: modelPlan }),
@@ -105,7 +106,7 @@ export function App() {
       return
     }
 
-    if (relayoutNonce === 0 && lastModelShapeRef.current === shape && lastModelPlanRef.current) {
+    if (relayoutNonce === 0 && lastModelCacheKeyRef.current === modelCacheKey && lastModelPlanRef.current) {
       setModelPlan(lastModelPlanRef.current)
       setModelStatus({ state: 'reused' })
       return
@@ -125,7 +126,7 @@ export function App() {
         const payload = await response.json() as { plan: RenderPlan; provider: string; usedModel: boolean; fellBack: boolean; error?: string }
         if (cancelled) return
         setModelPlan(payload.plan)
-        lastModelShapeRef.current = shape
+        lastModelCacheKeyRef.current = modelCacheKey
         lastModelPlanRef.current = payload.plan
         setModelStatus(payload.usedModel
           ? { state: 'applied', provider: payload.provider }
@@ -140,7 +141,7 @@ export function App() {
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [axes.logic, axes.density, compileOptions, markdown, relayoutNonce, shape])
+  }, [axes.logic, axes.density, compileOptions, markdown, modelCacheKey, relayoutNonce])
 
   function applyPreset(nextPreset: Exclude<PresetId, 'custom'>) {
     setPreset(nextPreset)

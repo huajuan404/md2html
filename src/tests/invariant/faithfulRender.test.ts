@@ -58,4 +58,24 @@ describe('Faithful render pipeline', () => {
     expect(result.html).not.toMatch(/data-source-blocks/)
     expect(result.html).not.toMatch(/data-render-node/)
   })
+
+  test('export html lang follows explicit content language', () => {
+    const zhResult = compileMarkdownToHtml(readmeMd(), {
+      logic: 'none',
+      density: 'comfortable',
+      theme: 'editorial-light',
+      contentLanguage: 'zh',
+      includeSourceMetadata: false,
+    })
+    const enResult = compileMarkdownToHtml(readmeMd(), {
+      logic: 'none',
+      density: 'comfortable',
+      theme: 'editorial-light',
+      contentLanguage: 'en',
+      includeSourceMetadata: false,
+    })
+
+    expect(zhResult.html).toContain('<html lang="zh"')
+    expect(enResult.html).toContain('<html lang="en"')
+  })
 })

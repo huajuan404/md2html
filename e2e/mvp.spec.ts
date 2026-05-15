@@ -157,3 +157,17 @@ test('e2e load sample uses current UI language without auto-rewriting on UI swit
   await page.getByRole('button', { name: 'Load sample' }).click()
   await expect(page.locator('.cm-content')).toContainText('Markdown is for editing')
 })
+
+
+test('e2e content language switch triggers render-plan API in non-faithful mode', async ({ page }) => {
+  let renderPlanRequests = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
+  })
+  await page.goto('/')
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  const afterInitial = renderPlanRequests
+  await page.getByLabel('Content').selectOption('zh')
+  await expect.poll(() => renderPlanRequests).toBeGreaterThan(afterInitial)
+})

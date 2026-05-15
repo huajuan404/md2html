@@ -5924,3 +5924,11 @@
 - Fixed server-side model fallback semantics: missing provider, model error, or invalid model RenderPlan now returns faithful/original-order plan instead of deterministic non-faithful fallback.
 - Added tests for invalid SourceBlock references and no-provider fallback returning `logic: none`.
 - Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; unit tests now 27.
+
+
+## 2026-05-15T10:58:46 — content-language cache checkpoint
+
+- Added explicit unit coverage that exported `<html lang>` follows content language.
+- Added E2E coverage that content language switching in a non-faithful mode triggers `/api/render-plan`.
+- Fixed frontend model-plan reuse key to include content language, preventing stale RenderPlan reuse across content-language changes.
+- Verification target: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e`.
