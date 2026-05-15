@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { compileMarkdownToHtml } from '../compiler/compileMarkdown'
 import type { ContentLanguage, DensityId, LogicId, ThemeId } from '../compiler/types'
 import { detectDefaultUiLanguage, getUiDict } from '../i18n'
@@ -27,6 +27,8 @@ export function App() {
   const [includeSourceMetadata, setIncludeSourceMetadata] = useState(true)
   const [preset, setPreset] = useState<PresetId>('faithful')
   const [axes, setAxes] = useState<Axes>(presets.faithful)
+  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([])
+  const editorRef = useRef<HTMLTextAreaElement | null>(null)
   const t = getUiDict(uiLanguage)
 
   const result = useMemo(
@@ -37,6 +39,28 @@ export function App() {
     }),
     [axes, contentLanguage, includeSourceMetadata, markdown],
   )
+
+  const selectedBlocks = selectedSourceIds
+    .map((id) => result.sourceBlocks.find((block) => block.id === id))
+    .filter((block): block is NonNullable<typeof block> => Boolean(block))
+
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (event.data?.type !== 'md2html:select-source') return
+      setSelectedSourceIds(String(event.data.sourceBlockIds || '').split(' ').filter(Boolean))
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  useEffect(() => {
+    const first = selectedBlocks[0]
+    const last = selectedBlocks[selectedBlocks.length - 1]
+    const editor = editorRef.current
+    if (!first || !last || !editor) return
+    editor.focus()
+    editor.setSelectionRange(first.startOffset, last.endOffset)
+  }, [selectedBlocks])
 
   function applyPreset(nextPreset: Exclude<PresetId, 'custom'>) {
     setPreset(nextPreset)
@@ -57,7 +81,9 @@ export function App() {
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = 'md2html.html'
+    document.body.appendChild(anchor)
     anchor.click()
+    anchor.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -103,7 +129,7 @@ export function App() {
         <button type="button" onClick={downloadHtml}>{t.download}</button>
       </header>
       <section className="workspace">
-        <textarea aria-label="Markdown source" value={markdown} onChange={(event) => setMarkdown(event.target.value)} />
+        <div className="editor-pane"><textarea ref={editorRef} aria-label="Markdown source" value={markdown} onChange={(event) => setMarkdown(event.target.value)} /><div data-testid="source-selection-status" className="selection-status">{selectedBlocks.length ? `Lines ${selectedBlocks[0].startLine}-${selectedBlocks[selectedBlocks.length - 1].endLine}` : 'No source block selected'}</div></div>
         <iframe title="HTML projection preview" sandbox="allow-scripts" srcDoc={result.html} />
       </section>
     </main>
@@ -111,5 +137,5 @@ export function App() {
 }
 
 const appCss = `
-html,body,#root{height:100%;margin:0}.app-shell{display:grid;grid-template-rows:auto 1fr;height:100vh;font-family:system-ui,sans-serif}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ddd;padding:10px 12px;background:#fff}.toolbar label{display:flex;gap:4px;align-items:center;font-size:12px;color:#344054}.toolbar input[type=file]{max-width:120px}.toolbar select,.toolbar button{font:inherit}.checkbox{white-space:nowrap}.workspace{display:grid;grid-template-columns:1fr 1fr;min-height:0}.workspace textarea{border:0;border-right:1px solid #ddd;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:16px;resize:none}.workspace iframe{border:0;width:100%;height:100%}
+html,body,#root{height:100%;margin:0}.app-shell{display:grid;grid-template-rows:auto 1fr;height:100vh;font-family:system-ui,sans-serif}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ddd;padding:10px 12px;background:#fff}.toolbar label{display:flex;gap:4px;align-items:center;font-size:12px;color:#344054}.toolbar input[type=file]{max-width:120px}.toolbar select,.toolbar button{font:inherit}.checkbox{white-space:nowrap}.workspace{display:grid;grid-template-columns:1fr 1fr;min-height:0}.editor-pane{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid #ddd}.workspace textarea{border:0;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:16px;resize:none}.selection-status{border-top:1px solid #ddd;padding:8px 12px;font-size:12px;color:#475467;background:#f9fafb}.workspace iframe{border:0;width:100%;height:100%}
 `

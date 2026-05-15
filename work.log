@@ -5862,3 +5862,12 @@
 - Added ADR 0006 to lock the local-CLI LLM direction while keeping the browser MVP deterministic and testable.
 - Verification: `pnpm vitest run src/tests/llm`, `pnpm build`, and `pnpm test:unit` passed with 22 tests.
 - Next: source-map click interaction, upload/download E2E, and Playwright acceptance harness.
+
+
+## 2026-05-15T10:24:26 — M6 E2E/source-map checkpoint
+
+- Added Playwright E2E tests before browser runtime was installed; first run failed because Chromium was missing. Installed Playwright Chromium and iterated failing tests.
+- Added source-map click message handling, textarea source selection, and visible line-range status.
+- Added Playwright config and E2E coverage for first open, paste/upload, preset axis sync, metadata download behavior, source click mapping, and UI-language no-output-change.
+- Verification: `pnpm test:e2e` passed with 6 tests.
+- Next: add README/open-source polish, run completion audit against PRD/ACCEPTANCE, and fill any remaining gaps.
