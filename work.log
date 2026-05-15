@@ -5899,3 +5899,12 @@
 - Preserved right-preview clickback by mapping source offsets into CodeMirror selections.
 - Added E2E coverage for CodeMirror presence, line numbers, live editing, and reload persistence.
 - Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 8 tests.
+
+
+## 2026-05-15T10:50:00 — export metadata and recompilation E2E checkpoint
+
+- Split preview HTML from exported HTML: preview always keeps source map for clickback; copy/download use metadata toggle.
+- Changed metadata export default to off, matching PRD.
+- Persisted UI language to localStorage.
+- Added E2E coverage for metadata export default, copy HTML, UI language persistence, text-only edit no model request, structural edit model request, and regenerate button forcing model request.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 12 tests.

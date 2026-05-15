@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import fs from 'node:fs'
 import path from 'node:path'
 
 test('e2e first open shows editor, preview, and full toolbar', async ({ page }) => {
@@ -33,20 +34,29 @@ test('e2e presets sync axes and manual axis switches to custom', async ({ page }
   await expect(page.getByLabel('Preset')).toHaveValue('custom')
 })
 
-test('e2e download respects source metadata switch', async ({ page }) => {
+test('e2e download metadata defaults off while preview keeps source map for clickback', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByLabel('Keep source map')).not.toBeChecked()
+  const previewHtml = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
+  expect(previewHtml).toContain('data-source-blocks')
+
+  const [withoutMetadata] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download HTML' }).click(),
+  ])
+  const withoutPath = await withoutMetadata.path()
+  expect(withoutPath).toBeTruthy()
+  expect(fs.readFileSync(withoutPath!, 'utf8')).not.toContain('data-source-blocks')
+
   await page.getByLabel('Keep source map').check()
   const [withMetadata] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download HTML' }).click(),
   ])
   expect(withMetadata.suggestedFilename()).toBe('md2html.html')
-  const withText = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
-  expect(withText).toContain('data-source-blocks')
-
-  await page.getByLabel('Keep source map').uncheck()
-  const withoutText = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
-  expect(withoutText).not.toContain('data-source-blocks')
+  const withPath = await withMetadata.path()
+  expect(withPath).toBeTruthy()
+  expect(fs.readFileSync(withPath!, 'utf8')).toContain('data-source-blocks')
 })
 
 test('e2e clicking preview maps back to source lines', async ({ page }) => {
@@ -84,4 +94,52 @@ test('e2e editor uses CodeMirror with line numbers and persists local markdown',
   await page.reload()
   await expect(page.locator('.cm-content')).toContainText('Persisted')
   await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('h1')).toHaveText('Persisted')
+})
+
+test('e2e UI language persists across reloads', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('UI').selectOption('zh')
+  await expect(page.getByLabel('上传')).toBeVisible()
+  await page.reload()
+  await expect(page.getByLabel('上传')).toBeVisible()
+})
+
+test('e2e copy HTML writes export HTML without metadata by default', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Copy HTML' }).click()
+  const copied = await page.evaluate(() => navigator.clipboard.readText())
+  expect(copied).toContain('<!doctype html>')
+  expect(copied).not.toContain('data-source-blocks')
+})
+
+test('e2e text-only edit reuses model plan without calling render-plan API', async ({ page }) => {
+  const readme = fs.readFileSync(path.resolve('fixtures/inputs/readme.md'), 'utf8')
+  let renderPlanRequests = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
+  })
+  await page.goto('/')
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  renderPlanRequests = 0
+  await page.getByLabel('Markdown source').fill(readme.replace('适合写', '适合继续写'))
+  await page.waitForTimeout(900)
+  expect(renderPlanRequests).toBe(0)
+})
+
+test('e2e structural edit and regenerate button call render-plan API', async ({ page }) => {
+  let renderPlanRequests = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
+  })
+  await page.goto('/')
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  const afterInitial = renderPlanRequests
+  await page.getByLabel('Markdown source').fill(`${fs.readFileSync(path.resolve('fixtures/inputs/readme.md'), 'utf8')}\n\n新增结构段落。`)
+  await expect.poll(() => renderPlanRequests).toBeGreaterThan(afterInitial)
+  const afterStructural = renderPlanRequests
+  await page.getByRole('button', { name: 'Regenerate layout' }).click()
+  await expect.poll(() => renderPlanRequests).toBeGreaterThan(afterStructural)
 })

@@ -24,6 +24,7 @@ type Axes = {
 }
 
 const LOCAL_STORAGE_MARKDOWN_KEY = 'md2html:last-markdown'
+const LOCAL_STORAGE_UI_LANGUAGE_KEY = 'md2html:ui-language'
 
 const presets: Record<Exclude<PresetId, 'custom'>, Axes> = {
   faithful: { logic: 'none', density: 'comfortable', theme: 'editorial-light' },
@@ -34,9 +35,9 @@ const presets: Record<Exclude<PresetId, 'custom'>, Axes> = {
 
 export function App() {
   const [markdown, setMarkdown] = useState(() => loadInitialMarkdown())
-  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(() => detectDefaultUiLanguage())
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>(() => loadInitialUiLanguage())
   const [contentLanguage, setContentLanguage] = useState<ContentLanguage>('auto')
-  const [includeSourceMetadata, setIncludeSourceMetadata] = useState(true)
+  const [includeSourceMetadata, setIncludeSourceMetadata] = useState(false)
   const [preset, setPreset] = useState<PresetId>('faithful')
   const [axes, setAxes] = useState<Axes>(presets.faithful)
   const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([])
@@ -57,6 +58,11 @@ export function App() {
   }), [axes, contentLanguage, includeSourceMetadata])
 
   const result = useMemo(
+    () => compileMarkdownToHtml(markdown, { ...compileOptions, includeSourceMetadata: true }, { renderPlanOverride: modelPlan }),
+    [compileOptions, markdown, modelPlan],
+  )
+
+  const exportResult = useMemo(
     () => compileMarkdownToHtml(markdown, compileOptions, { renderPlanOverride: modelPlan }),
     [compileOptions, markdown, modelPlan],
   )
@@ -84,6 +90,10 @@ export function App() {
   useEffect(() => {
     window.localStorage.setItem(LOCAL_STORAGE_MARKDOWN_KEY, markdown)
   }, [markdown])
+
+  useEffect(() => {
+    window.localStorage.setItem(LOCAL_STORAGE_UI_LANGUAGE_KEY, uiLanguage)
+  }, [uiLanguage])
 
   useEffect(() => {
     let cancelled = false
@@ -141,11 +151,11 @@ export function App() {
   }
 
   async function copyHtml() {
-    await navigator.clipboard?.writeText(result.html)
+    await navigator.clipboard?.writeText(exportResult.html)
   }
 
   function downloadHtml() {
-    const url = URL.createObjectURL(new Blob([result.html], { type: 'text/html;charset=utf-8' }))
+    const url = URL.createObjectURL(new Blob([exportResult.html], { type: 'text/html;charset=utf-8' }))
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = 'md2html.html'
@@ -205,6 +215,13 @@ export function App() {
   )
 }
 
+
+
+function loadInitialUiLanguage(): UiLanguage {
+  if (typeof window === 'undefined') return 'en'
+  const stored = window.localStorage.getItem(LOCAL_STORAGE_UI_LANGUAGE_KEY)
+  return stored === 'zh' || stored === 'en' ? stored : detectDefaultUiLanguage()
+}
 
 function loadInitialMarkdown(): string {
   if (typeof window === 'undefined') return readme
