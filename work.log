@@ -5843,3 +5843,13 @@
 - Renderer already supports three theme token sets; toolbar now exposes them.
 - Verification: `pnpm vitest run src/tests/i18n`, `pnpm build`, and `pnpm test:unit` passed with 7 tests.
 - Next: implement skeleton configs and deterministic result-first/narrative planning.
+
+
+## 2026-05-15T10:18:54 — M4 skeleton planning checkpoint
+
+- Added skeleton compliance tests before `src/skeletons` existed.
+- Implemented all 9 logic-density skeleton configs.
+- Added deterministic non-LLM planner for result-first and narrative modes, while preserving faithful order for logic none.
+- Updated renderer to support grouped source blocks on one outer source-mapped node.
+- Verification: `pnpm vitest run src/tests/skeleton`, `pnpm build`, and `pnpm test:unit` passed with 17 tests.
+- Next: implement shape diff, cache, LLM client stub/fallback behavior, and relayout trigger semantics.

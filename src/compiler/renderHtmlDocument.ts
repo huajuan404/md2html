@@ -13,9 +13,9 @@ export function renderHtmlDocument(blocks: SourceBlock[], renderPlan: RenderPlan
   }
   const includeSourceMetadata = options.includeSourceMetadata ?? true
   const body = renderPlan.nodes.map((node) => {
-    const block = context.blocksById.get(node.sourceBlockIds[0])
-    if (!block) return ''
-    return renderBlock(block, node.id, node.sourceBlockIds, context)
+    const nodeBlocks = node.sourceBlockIds.map((id) => context.blocksById.get(id)).filter((block): block is SourceBlock => Boolean(block))
+    if (!nodeBlocks.length) return ''
+    return renderNode(node.kind, nodeBlocks, node.id, node.sourceBlockIds, context)
   }).join('\n')
 
   return `<!doctype html>
@@ -35,7 +35,19 @@ ${body}
 </html>`
 }
 
-function renderBlock(block: SourceBlock, nodeId: string, sourceBlockIds: string[], context: RenderContext): string {
+function renderNode(kind: string, blocks: SourceBlock[], nodeId: string, sourceBlockIds: string[], context: RenderContext): string {
+  const block = blocks[0]
+  if (blocks.length > 1) {
+    const attrs = context.includeSourceMetadata
+      ? ` data-render-node="${escapeAttribute(nodeId)}" data-source-blocks="${escapeAttribute(sourceBlockIds.join(' '))}"`
+      : ''
+    const inner = blocks.map((child) => renderBlockInner(child)).join('')
+    return `<section${attrs} class="${escapeAttribute(kind)}">${inner}</section>`
+  }
+  return renderSingleBlock(block, nodeId, sourceBlockIds, context)
+}
+
+function renderSingleBlock(block: SourceBlock, nodeId: string, sourceBlockIds: string[], context: RenderContext): string {
   const attrs = context.includeSourceMetadata
     ? ` data-render-node="${escapeAttribute(nodeId)}" data-source-blocks="${escapeAttribute(sourceBlockIds.join(' '))}"`
     : ''
@@ -51,6 +63,19 @@ function renderBlock(block: SourceBlock, nodeId: string, sourceBlockIds: string[
   if (block.type === 'code') return `<pre${attrs}><code>${escapeHtml(block.text)}</code></pre>`
   if (block.type === 'thematicBreak') return `<hr${attrs} />`
   return `<section${attrs} class="paragraph"><p>${inlineMarkdown(block.text)}</p></section>`
+}
+
+function renderBlockInner(block: SourceBlock): string {
+  if (block.type === 'heading') {
+    const level = Math.min(Math.max(block.depth ?? 2, 1), 6)
+    return `<h${level}>${escapeHtml(block.text)}</h${level}>`
+  }
+  if (block.type === 'quote') return `<blockquote>${inlineMarkdown(block.text)}</blockquote>`
+  if (block.type === 'list') return renderList(block, '')
+  if (block.type === 'table') return renderTable(block, '')
+  if (block.type === 'code') return `<pre><code>${escapeHtml(block.text)}</code></pre>`
+  if (block.type === 'thematicBreak') return '<hr />'
+  return `<p>${inlineMarkdown(block.text)}</p>`
 }
 
 function renderList(block: SourceBlock, attrs: string): string {
