@@ -36,7 +36,24 @@ describe('render plan API core', () => {
     expect(response.usedModel).toBe(false)
     expect(response.fellBack).toBe(true)
     expect(response.error).toContain('unknown source block')
+    expect(response.plan.logic).toBe('none')
     expect(response.plan.nodes.length).toBeGreaterThan(1)
+  })
+
+
+
+  test('falls back to faithful when no provider is available', async () => {
+    const originalProvider = process.env.MD2HTML_LLM_PROVIDER
+    process.env.MD2HTML_LLM_PROVIDER = 'none'
+    try {
+      const response = await renderPlanForRequest({ markdown: markdown(), options })
+      expect(response.usedModel).toBe(false)
+      expect(response.fellBack).toBe(true)
+      expect(response.plan.logic).toBe('none')
+    } finally {
+      if (originalProvider === undefined) delete process.env.MD2HTML_LLM_PROVIDER
+      else process.env.MD2HTML_LLM_PROVIDER = originalProvider
+    }
   })
 
   test('faithful mode never invokes the model', async () => {

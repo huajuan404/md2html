@@ -5917,3 +5917,10 @@
 - UI language persists across reloads.
 - Verified UI language switching itself still does not rewrite the current document or preview; loading a sample is explicit.
 - Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 13 tests.
+
+
+## 2026-05-15T10:54:54 — faithful AI fallback checkpoint
+
+- Fixed server-side model fallback semantics: missing provider, model error, or invalid model RenderPlan now returns faithful/original-order plan instead of deterministic non-faithful fallback.
+- Added tests for invalid SourceBlock references and no-provider fallback returning `logic: none`.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; unit tests now 27.

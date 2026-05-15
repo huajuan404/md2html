@@ -1,4 +1,5 @@
 import { buildRenderPlan } from '../compiler/buildRenderPlan'
+import { buildRenderPlanFaithful } from '../compiler/buildRenderPlanFaithful'
 import { extractSourceBlocks } from '../compiler/extractSourceBlocks'
 import type { CompileOptions, RenderPlan, SourceBlock } from '../compiler/types'
 import { createConfiguredLocalCliClient } from './localCliLlm'
@@ -31,6 +32,7 @@ export type RenderPlanApiResponse = {
 export async function renderPlanForRequest(request: RenderPlanApiRequest, client?: AsyncLlmClient): Promise<RenderPlanApiResponse> {
   const sourceBlocks = extractSourceBlocks(request.markdown)
   const fallbackPlan = buildRenderPlan(sourceBlocks, request.options)
+  const faithfulPlan = buildRenderPlanFaithful(sourceBlocks, request.options)
 
   if (request.options.logic === 'none') {
     return { plan: fallbackPlan, provider: 'deterministic', usedModel: false, fellBack: false }
@@ -38,17 +40,17 @@ export async function renderPlanForRequest(request: RenderPlanApiRequest, client
 
   const llm = client ?? createConfiguredLocalCliClient()
   if (!llm) {
-    return { plan: fallbackPlan, provider: 'none', usedModel: false, fellBack: true, error: 'No local model provider configured or detected' }
+    return { plan: faithfulPlan, provider: 'none', usedModel: false, fellBack: true, error: 'No local model provider configured or detected' }
   }
 
   try {
     const modelPlan = await llm.invoke({ sourceBlocks, fallbackPlan, options: request.options })
     const errors = validateRenderPlan(modelPlan, sourceBlocks, request.options)
     if (errors.length) {
-      return { plan: fallbackPlan, provider: llm.providerName ?? 'injected', usedModel: false, fellBack: true, error: errors.join('; ') }
+      return { plan: faithfulPlan, provider: llm.providerName ?? 'injected', usedModel: false, fellBack: true, error: errors.join('; ') }
     }
     return { plan: modelPlan, provider: llm.providerName ?? 'injected', usedModel: true, fellBack: false }
   } catch (error) {
-    return { plan: fallbackPlan, provider: llm.providerName ?? 'injected', usedModel: false, fellBack: true, error: error instanceof Error ? error.message : String(error) }
+    return { plan: faithfulPlan, provider: llm.providerName ?? 'injected', usedModel: false, fellBack: true, error: error instanceof Error ? error.message : String(error) }
   }
 }
