@@ -3,6 +3,7 @@ import { compileMarkdownToHtml } from '../compiler/compileMarkdown'
 import { detectShape } from '../compiler/detectShape'
 import { extractSourceBlocks } from '../compiler/extractSourceBlocks'
 import type { CompileOptions, ContentLanguage, DensityId, LogicId, RenderPlan, ThemeId } from '../compiler/types'
+import { MarkdownEditor } from '../editor/MarkdownEditor'
 import { detectDefaultUiLanguage, getUiDict } from '../i18n'
 import type { UiLanguage } from '../i18n/types'
 import readme from '../../fixtures/inputs/readme.md?raw'
@@ -22,6 +23,8 @@ type Axes = {
   theme: ThemeId
 }
 
+const LOCAL_STORAGE_MARKDOWN_KEY = 'md2html:last-markdown'
+
 const presets: Record<Exclude<PresetId, 'custom'>, Axes> = {
   faithful: { logic: 'none', density: 'comfortable', theme: 'editorial-light' },
   reader: { logic: 'narrative', density: 'comfortable', theme: 'editorial-light' },
@@ -30,7 +33,7 @@ const presets: Record<Exclude<PresetId, 'custom'>, Axes> = {
 }
 
 export function App() {
-  const [markdown, setMarkdown] = useState(readme)
+  const [markdown, setMarkdown] = useState(() => loadInitialMarkdown())
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>(() => detectDefaultUiLanguage())
   const [contentLanguage, setContentLanguage] = useState<ContentLanguage>('auto')
   const [includeSourceMetadata, setIncludeSourceMetadata] = useState(true)
@@ -40,7 +43,7 @@ export function App() {
   const [modelPlan, setModelPlan] = useState<RenderPlan | undefined>()
   const [modelStatus, setModelStatus] = useState<ModelStatus>({ state: 'deterministic' })
   const [relayoutNonce, setRelayoutNonce] = useState(0)
-  const editorRef = useRef<HTMLTextAreaElement | null>(null)
+
   const lastModelShapeRef = useRef<string | undefined>(undefined)
   const lastModelPlanRef = useRef<RenderPlan | undefined>(undefined)
   const t = getUiDict(uiLanguage)
@@ -71,14 +74,16 @@ export function App() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  const sourceSelection = selectedBlocks.length
+    ? {
+        from: selectedBlocks[0].startOffset,
+        to: selectedBlocks[selectedBlocks.length - 1].endOffset,
+      }
+    : undefined
+
   useEffect(() => {
-    const first = selectedBlocks[0]
-    const last = selectedBlocks[selectedBlocks.length - 1]
-    const editor = editorRef.current
-    if (!first || !last || !editor) return
-    editor.focus()
-    editor.setSelectionRange(first.startOffset, last.endOffset)
-  }, [selectedBlocks])
+    window.localStorage.setItem(LOCAL_STORAGE_MARKDOWN_KEY, markdown)
+  }, [markdown])
 
   useEffect(() => {
     let cancelled = false
@@ -193,11 +198,17 @@ export function App() {
         <span data-testid="model-status" className={`model-status ${modelStatus.state}`} title={modelStatus.error}>{t.modelStatus}: {modelStatusText(modelStatus, t)}</span>
       </header>
       <section className="workspace">
-        <div className="editor-pane"><textarea ref={editorRef} aria-label="Markdown source" value={markdown} onChange={(event) => setMarkdown(event.target.value)} /><div data-testid="source-selection-status" className="selection-status">{selectedBlocks.length ? `Lines ${selectedBlocks[0].startLine}-${selectedBlocks[selectedBlocks.length - 1].endLine}` : 'No source block selected'}</div></div>
+        <div className="editor-pane"><MarkdownEditor value={markdown} onChange={setMarkdown} selection={sourceSelection} /><div data-testid="source-selection-status" className="selection-status">{selectedBlocks.length ? `Lines ${selectedBlocks[0].startLine}-${selectedBlocks[selectedBlocks.length - 1].endLine}` : 'No source block selected'}</div></div>
         <iframe title="HTML projection preview" sandbox="allow-scripts" srcDoc={result.html} />
       </section>
     </main>
   )
+}
+
+
+function loadInitialMarkdown(): string {
+  if (typeof window === 'undefined') return readme
+  return window.localStorage.getItem(LOCAL_STORAGE_MARKDOWN_KEY) || readme
 }
 
 function modelStatusText(modelStatus: ModelStatus, t: ReturnType<typeof getUiDict>): string {
@@ -210,5 +221,5 @@ function modelStatusText(modelStatus: ModelStatus, t: ReturnType<typeof getUiDic
 }
 
 const appCss = `
-html,body,#root{height:100%;margin:0}.app-shell{display:grid;grid-template-rows:auto 1fr;height:100vh;font-family:system-ui,sans-serif}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ddd;padding:10px 12px;background:#fff}.toolbar label{display:flex;gap:4px;align-items:center;font-size:12px;color:#344054}.toolbar input[type=file]{max-width:120px}.toolbar select,.toolbar button{font:inherit}.checkbox{white-space:nowrap}.model-status{font-size:12px;color:#475467;background:#f2f4f7;border:1px solid #d0d5dd;border-radius:999px;padding:3px 8px}.model-status.applied{background:#ecfdf3;color:#027a48}.model-status.fallback{background:#fff6ed;color:#b54708}.model-status.running,.model-status.waiting{background:#eff8ff;color:#175cd3}.workspace{display:grid;grid-template-columns:1fr 1fr;min-height:0}.editor-pane{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid #ddd}.workspace textarea{border:0;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:16px;resize:none}.selection-status{border-top:1px solid #ddd;padding:8px 12px;font-size:12px;color:#475467;background:#f9fafb}.workspace iframe{border:0;width:100%;height:100%}
+html,body,#root{height:100%;margin:0}.app-shell{display:grid;grid-template-rows:auto 1fr;height:100vh;font-family:system-ui,sans-serif}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ddd;padding:10px 12px;background:#fff}.toolbar label{display:flex;gap:4px;align-items:center;font-size:12px;color:#344054}.toolbar input[type=file]{max-width:120px}.toolbar select,.toolbar button{font:inherit}.checkbox{white-space:nowrap}.model-status{font-size:12px;color:#475467;background:#f2f4f7;border:1px solid #d0d5dd;border-radius:999px;padding:3px 8px}.model-status.applied{background:#ecfdf3;color:#027a48}.model-status.fallback{background:#fff6ed;color:#b54708}.model-status.running,.model-status.waiting{background:#eff8ff;color:#175cd3}.workspace{display:grid;grid-template-columns:1fr 1fr;min-height:0}.editor-pane{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid #ddd}.markdown-editor{min-height:0;height:100%;overflow:hidden}.selection-status{border-top:1px solid #ddd;padding:8px 12px;font-size:12px;color:#475467;background:#f9fafb}.workspace iframe{border:0;width:100%;height:100%}
 `

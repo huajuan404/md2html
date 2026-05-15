@@ -5890,3 +5890,12 @@
 - Verified README fixture path with Playwright using `MD2HTML_LLM_PROVIDER=mock`: non-faithful preset applied local model render plan through the bridge.
 - Local provider check: `claude auth status` shows logged in, but a tiny `claude --print` call hit the current usage limit; `codex exec` tiny JSON prompt succeeded.
 - Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed.
+
+
+## 2026-05-15T10:46:43 — CodeMirror editor checkpoint
+
+- Replaced textarea with CodeMirror 6 editor to satisfy PRD editor requirements: Markdown syntax highlighting and line numbers.
+- Added localStorage single-slot draft persistence and restore.
+- Preserved right-preview clickback by mapping source offsets into CodeMirror selections.
+- Added E2E coverage for CodeMirror presence, line numbers, live editing, and reload persistence.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 8 tests.

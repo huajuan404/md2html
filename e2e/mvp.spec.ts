@@ -72,3 +72,16 @@ test('e2e non-faithful preset applies a local model render plan through the serv
   await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
   await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('[data-render-node]').first()).toBeVisible()
 })
+
+test('e2e editor uses CodeMirror with line numbers and persists local markdown', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.cm-editor')).toBeVisible()
+  await expect(page.locator('.cm-lineNumbers')).toBeVisible()
+  await page.locator('.cm-content').click()
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A')
+  await page.keyboard.type('# Persisted\n\nLocal draft')
+  await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('h1')).toHaveText('Persisted')
+  await page.reload()
+  await expect(page.locator('.cm-content')).toContainText('Persisted')
+  await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('h1')).toHaveText('Persisted')
+})

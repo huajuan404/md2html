@@ -20,7 +20,9 @@
     "dev:codex": "MD2HTML_LLM_PROVIDER=codex vite"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-markdown": "latest",
+    "@codemirror/language": "^6.12.3",
     "@codemirror/state": "latest",
     "@codemirror/view": "latest",
     "@lezer/markdown": "latest",
