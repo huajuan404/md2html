@@ -65,4 +65,5 @@ export type CompileResult = {
   sourceBlocks: SourceBlock[]
   renderPlan: RenderPlan
   fellBackToFaithful: boolean
+  resolvedContentLanguage: Exclude<ContentLanguage, 'auto'>
 }

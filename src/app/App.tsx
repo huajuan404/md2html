@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { buildRenderPlanFaithful } from '../compiler/buildRenderPlanFaithful'
 import { compileMarkdownToHtml } from '../compiler/compileMarkdown'
+import { resolveContentLanguage } from '../compiler/contentLanguage'
 import { detectShape } from '../compiler/detectShape'
 import { extractSourceBlocks } from '../compiler/extractSourceBlocks'
 import type { CompileOptions, ContentLanguage, DensityId, LogicId, RenderPlan, ThemeId } from '../compiler/types'
@@ -53,16 +55,29 @@ export function App() {
 
   const sourceBlocks = useMemo(() => extractSourceBlocks(markdown), [markdown])
   const shape = useMemo(() => detectShape(sourceBlocks), [sourceBlocks])
+  const effectiveContentLanguage = useMemo(() => resolveContentLanguage(sourceBlocks, contentLanguage), [contentLanguage, sourceBlocks])
   const compileOptions = useMemo<CompileOptions>(() => ({
     ...axes,
     contentLanguage,
     includeSourceMetadata,
   }), [axes, contentLanguage, includeSourceMetadata])
-  const modelCacheKey = `${shape}::${axes.logic}::${axes.density}::${contentLanguage}`
+  const modelRequestOptions = useMemo<CompileOptions>(() => ({
+    ...axes,
+    contentLanguage: effectiveContentLanguage,
+    includeSourceMetadata: true,
+  }), [axes.logic, axes.density, effectiveContentLanguage])
+  const modelCacheKey = `${shape}::${axes.logic}::${axes.density}::${effectiveContentLanguage}`
+  const faithfulPreviewPlan = useMemo(
+    () => buildRenderPlanFaithful(sourceBlocks, { density: axes.density }),
+    [axes.density, sourceBlocks],
+  )
+  const previewPlanOverride = modelPlan ?? (axes.logic !== 'none' && (modelStatus.state === 'waiting' || modelStatus.state === 'running')
+    ? faithfulPreviewPlan
+    : undefined)
 
   const result = useMemo(
-    () => compileMarkdownToHtml(markdown, { ...compileOptions, includeSourceMetadata: true }, { renderPlanOverride: modelPlan }),
-    [compileOptions, markdown, modelPlan],
+    () => compileMarkdownToHtml(markdown, { ...compileOptions, includeSourceMetadata: true }, { renderPlanOverride: previewPlanOverride }),
+    [compileOptions, markdown, previewPlanOverride],
   )
 
   const exportResult = useMemo(
@@ -120,7 +135,7 @@ export function App() {
         const response = await fetch('/api/render-plan', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ markdown, options: compileOptions }),
+          body: JSON.stringify({ markdown, options: modelRequestOptions }),
         })
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         const payload = await response.json() as { plan: RenderPlan; provider: string; usedModel: boolean; fellBack: boolean; error?: string }
@@ -133,6 +148,7 @@ export function App() {
           : { state: 'fallback', provider: payload.provider, error: payload.error })
       } catch (error) {
         if (cancelled) return
+        setModelPlan(faithfulPreviewPlan)
         setModelStatus({ state: 'fallback', provider: 'local-api', error: error instanceof Error ? error.message : String(error) })
       }
     }, 750)
@@ -141,7 +157,7 @@ export function App() {
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [axes.logic, axes.density, compileOptions, markdown, modelCacheKey, relayoutNonce])
+  }, [axes.logic, axes.density, faithfulPreviewPlan, markdown, modelCacheKey, modelRequestOptions, relayoutNonce])
 
   function applyPreset(nextPreset: Exclude<PresetId, 'custom'>) {
     setPreset(nextPreset)

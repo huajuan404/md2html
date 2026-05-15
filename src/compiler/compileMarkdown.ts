@@ -1,5 +1,6 @@
 import { buildRenderPlan } from './buildRenderPlan'
 import { buildRenderPlanFaithful } from './buildRenderPlanFaithful'
+import { resolveContentLanguage } from './contentLanguage'
 import { detectShape } from './detectShape'
 import { extractSourceBlocks } from './extractSourceBlocks'
 import type { LlmClient } from './llmClient'
@@ -24,14 +25,24 @@ export function compileMarkdownToHtml(markdown: string, options: CompileOptions,
   const sourceBlocks = extractSourceBlocks(markdown)
   const shape = detectShape(sourceBlocks)
   const lastShape = context.lastResult ? detectShape(context.lastResult.sourceBlocks) : undefined
-  const cacheKey = `${shape}::${options.logic}::${options.density}::${options.contentLanguage}`
+  const resolvedContentLanguage = resolveContentLanguage(sourceBlocks, options.contentLanguage)
+  const lastResolvedContentLanguage = context.lastResult?.resolvedContentLanguage
+  const cacheKey = `${shape}::${options.logic}::${options.density}::${resolvedContentLanguage}`
 
   let renderPlan: RenderPlan
   let fellBackToFaithful = false
 
   if (context.renderPlanOverride) {
     renderPlan = context.renderPlanOverride
-  } else if (options.logic !== 'none' && context.lastResult && !context.forceRelayout && shape === lastShape) {
+  } else if (
+    options.logic !== 'none'
+    && context.lastResult
+    && !context.forceRelayout
+    && shape === lastShape
+    && resolvedContentLanguage === lastResolvedContentLanguage
+    && context.lastResult.renderPlan.logic === options.logic
+    && context.lastResult.renderPlan.density === options.density
+  ) {
     renderPlan = context.lastResult.renderPlan
   } else if (options.logic !== 'none' && context.cache?.has(cacheKey)) {
     renderPlan = context.cache.get(cacheKey)!
@@ -56,5 +67,6 @@ export function compileMarkdownToHtml(markdown: string, options: CompileOptions,
     sourceBlocks,
     renderPlan,
     fellBackToFaithful,
+    resolvedContentLanguage,
   }
 }

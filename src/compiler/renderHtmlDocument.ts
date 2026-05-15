@@ -1,4 +1,5 @@
 import type { CompileOptions, RenderPlan, SourceBlock, ThemeId } from './types'
+import { resolveContentLanguage } from './contentLanguage'
 
 type RenderContext = {
   blocksById: Map<string, SourceBlock>
@@ -6,7 +7,7 @@ type RenderContext = {
 }
 
 export function renderHtmlDocument(blocks: SourceBlock[], renderPlan: RenderPlan, options: CompileOptions): string {
-  const contentLanguage = options.contentLanguage === 'auto' ? detectContentLanguage(blocks) : options.contentLanguage
+  const contentLanguage = resolveContentLanguage(blocks, options.contentLanguage)
   const context: RenderContext = {
     blocksById: new Map(blocks.map((block) => [block.id, block])),
     includeSourceMetadata: options.includeSourceMetadata ?? true,
@@ -98,12 +99,6 @@ function renderTable(block: SourceBlock, attrs: string): string {
     return `<tr>${cells.map((cell) => `<${cellTag}>${inlineMarkdown(cell)}</${cellTag}>`).join('')}</tr>`
   }).join('')
   return `<section${attrs} class="table"><table>${htmlRows}</table></section>`
-}
-
-function detectContentLanguage(blocks: SourceBlock[]): 'zh' | 'en' {
-  const text = blocks.map((block) => block.text).join('')
-  const cjk = text.match(/[\u3400-\u9fff]/g)?.length ?? 0
-  return cjk > text.length * 0.1 ? 'zh' : 'en'
 }
 
 function inlineMarkdown(text: string): string {

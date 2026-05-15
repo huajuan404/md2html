@@ -5932,3 +5932,12 @@
 - Added E2E coverage that content language switching in a non-faithful mode triggers `/api/render-plan`.
 - Fixed frontend model-plan reuse key to include content language, preventing stale RenderPlan reuse across content-language changes.
 - Verification target: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e`.
+
+
+## 2026-05-15T11:06:00 — README acceptance and model-gate checkpoint
+
+- Resolved `auto` content language before cache/model prompts so language changes cannot reuse stale RenderPlans.
+- Kept structural/model-waiting previews on faithful fallback and kept fetch failures on faithful plans.
+- Prevented export metadata toggles from triggering `/api/render-plan`.
+- Added visual README golden audit so `pnpm test:visual` and `pnpm test:all` are executable.
+- Verification: `pnpm build`, `pnpm test:unit` (29 tests), `pnpm test:visual` (1 test), `pnpm test:e2e` (15 tests), and `pnpm test:all` passed.

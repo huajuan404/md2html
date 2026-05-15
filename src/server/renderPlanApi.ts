@@ -1,5 +1,6 @@
 import { buildRenderPlan } from '../compiler/buildRenderPlan'
 import { buildRenderPlanFaithful } from '../compiler/buildRenderPlanFaithful'
+import { resolveContentLanguage } from '../compiler/contentLanguage'
 import { extractSourceBlocks } from '../compiler/extractSourceBlocks'
 import type { CompileOptions, RenderPlan, SourceBlock } from '../compiler/types'
 import { createConfiguredLocalCliClient } from './localCliLlm'
@@ -31,10 +32,14 @@ export type RenderPlanApiResponse = {
 
 export async function renderPlanForRequest(request: RenderPlanApiRequest, client?: AsyncLlmClient): Promise<RenderPlanApiResponse> {
   const sourceBlocks = extractSourceBlocks(request.markdown)
-  const fallbackPlan = buildRenderPlan(sourceBlocks, request.options)
-  const faithfulPlan = buildRenderPlanFaithful(sourceBlocks, request.options)
+  const effectiveOptions = {
+    ...request.options,
+    contentLanguage: resolveContentLanguage(sourceBlocks, request.options.contentLanguage),
+  }
+  const fallbackPlan = buildRenderPlan(sourceBlocks, effectiveOptions)
+  const faithfulPlan = buildRenderPlanFaithful(sourceBlocks, effectiveOptions)
 
-  if (request.options.logic === 'none') {
+  if (effectiveOptions.logic === 'none') {
     return { plan: fallbackPlan, provider: 'deterministic', usedModel: false, fellBack: false }
   }
 
@@ -44,8 +49,8 @@ export async function renderPlanForRequest(request: RenderPlanApiRequest, client
   }
 
   try {
-    const modelPlan = await llm.invoke({ sourceBlocks, fallbackPlan, options: request.options })
-    const errors = validateRenderPlan(modelPlan, sourceBlocks, request.options)
+    const modelPlan = await llm.invoke({ sourceBlocks, fallbackPlan, options: effectiveOptions })
+    const errors = validateRenderPlan(modelPlan, sourceBlocks, effectiveOptions)
     if (errors.length) {
       return { plan: faithfulPlan, provider: llm.providerName ?? 'injected', usedModel: false, fellBack: true, error: errors.join('; ') }
     }

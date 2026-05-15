@@ -171,3 +171,17 @@ test('e2e content language switch triggers render-plan API in non-faithful mode'
   await page.getByLabel('Content').selectOption('zh')
   await expect.poll(() => renderPlanRequests).toBeGreaterThan(afterInitial)
 })
+
+test('e2e export metadata switch does not trigger render-plan API', async ({ page }) => {
+  let renderPlanRequests = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
+  })
+  await page.goto('/')
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  const afterInitial = renderPlanRequests
+  await page.getByLabel('Keep source map').check()
+  await page.waitForTimeout(900)
+  expect(renderPlanRequests).toBe(afterInitial)
+})

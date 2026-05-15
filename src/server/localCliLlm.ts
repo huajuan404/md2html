@@ -96,6 +96,7 @@ Rules:
 - Do not generate HTML.
 - Use only these sourceBlockIds: ${sourceBlocks.map((block) => block.id).join(', ')}
 - Keep logic exactly ${options.logic} and density exactly ${options.density}.
+- Use ${options.contentLanguage} for optional section titles.
 - Every node must have id, kind, sourceBlockIds, and optional title.
 - quote/table/code nodes must reference exactly one source block.
 - You may reorder and group source blocks, but do not invent content.

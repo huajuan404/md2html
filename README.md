@@ -5,7 +5,7 @@ Source-first Markdown projection editor. Keep Markdown as the editable source, r
 ## What works now
 
 - Vite + React + TypeScript app shell.
-- Markdown source textarea with live iframe HTML preview.
+- CodeMirror Markdown source editor with live sandboxed iframe HTML preview.
 - Deterministic SourceBlock extraction with line/offset spans.
 - Faithful, result-first, and narrative planning modes constrained by 9 logic-density skeletons.
 - Three density modes and three themes.
@@ -13,6 +13,7 @@ Source-first Markdown projection editor. Keep Markdown as the editable source, r
 - Source metadata can be preserved or stripped from exported HTML.
 - Preview block click maps back to source lines.
 - Unit and browser acceptance tests run locally.
+- README visual audit captures system-vs-golden screenshots for manual review.
 
 ## Quick start
 
@@ -57,7 +58,9 @@ Direct OpenAI/Anthropic/Gemini API keys remain possible later, but they are not 
 ```bash
 pnpm build
 pnpm test:unit
+pnpm test:visual
 pnpm test:e2e
+pnpm test:all
 ```
 
 ## Project thesis

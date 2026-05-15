@@ -53,10 +53,20 @@ describe('LLM shape and cache gates', () => {
   test('content language change misses cache and invokes LLM', () => {
     const llm: LlmClient = { invoke: vi.fn((request) => request.fallbackPlan) }
     const cache = createCompileCache()
-    compileMarkdownToHtml(md(), { ...options, contentLanguage: 'zh' }, { llm, cache })
+    const first = compileMarkdownToHtml(md(), { ...options, contentLanguage: 'zh' }, { llm, cache })
     vi.mocked(llm.invoke).mockClear()
 
-    compileMarkdownToHtml(md(), { ...options, contentLanguage: 'en' }, { llm, cache })
+    compileMarkdownToHtml(md(), { ...options, contentLanguage: 'en' }, { llm, cache, lastResult: first })
+
+    expect(llm.invoke).toHaveBeenCalledTimes(1)
+  })
+
+  test('auto content language uses the detected language in the shape reuse gate', () => {
+    const llm: LlmClient = { invoke: vi.fn((request) => request.fallbackPlan) }
+    const first = compileMarkdownToHtml('# 标题\n\n这是中文内容。', { ...options, contentLanguage: 'auto' }, { llm })
+    vi.mocked(llm.invoke).mockClear()
+
+    compileMarkdownToHtml('# Title\n\nThis is English content.', { ...options, contentLanguage: 'auto' }, { llm, lastResult: first })
 
     expect(llm.invoke).toHaveBeenCalledTimes(1)
   })
