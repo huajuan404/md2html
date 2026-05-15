@@ -5941,3 +5941,9 @@
 - Prevented export metadata toggles from triggering `/api/render-plan`.
 - Added visual README golden audit so `pnpm test:visual` and `pnpm test:all` are executable.
 - Verification: `pnpm build`, `pnpm test:unit` (29 tests), `pnpm test:visual` (1 test), `pnpm test:e2e` (15 tests), and `pnpm test:all` passed.
+
+
+## 2026-05-15T11:07:55 — CI acceptance-suite checkpoint
+
+- Updated GitHub Actions to run `pnpm test:all`, so unit, visual README audit, and E2E acceptance all run in CI.
+- Prior push CI passed for build/unit/E2E; this checkpoint extends CI coverage to the new visual suite.
