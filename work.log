@@ -5853,3 +5853,12 @@
 - Updated renderer to support grouped source blocks on one outer source-mapped node.
 - Verification: `pnpm vitest run src/tests/skeleton`, `pnpm build`, and `pnpm test:unit` passed with 17 tests.
 - Next: implement shape diff, cache, LLM client stub/fallback behavior, and relayout trigger semantics.
+
+
+## 2026-05-15T10:20:12 — M5 shape/cache/LLM checkpoint
+
+- Added failing tests for LLM fallback, text-only shape reuse, structural edit invocation, cache hit on undo, and content-language cache miss.
+- Implemented `detectShape`, `LlmClient`, injectable compile context, and explicit compile cache.
+- Added ADR 0006 to lock the local-CLI LLM direction while keeping the browser MVP deterministic and testable.
+- Verification: `pnpm vitest run src/tests/llm`, `pnpm build`, and `pnpm test:unit` passed with 22 tests.
+- Next: source-map click interaction, upload/download E2E, and Playwright acceptance harness.
