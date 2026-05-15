@@ -5833,3 +5833,13 @@
 - Implemented source metadata export switch behavior at renderer level.
 - Verification: `pnpm build` passed; `pnpm test:unit` passed with 5 tests.
 - Next: add toolbar/theme/i18n controls and Playwright E2E coverage.
+
+
+## 2026-05-15T10:17:30 — M3 toolbar and language checkpoint
+
+- Added i18n dictionary tests before dictionaries existed.
+- Implemented zh/en UI and output dictionaries with key parity tests.
+- Replaced placeholder app with toolbar controls for upload, presets, three axes, regenerate, UI language, content language, metadata, copy, and download.
+- Renderer already supports three theme token sets; toolbar now exposes them.
+- Verification: `pnpm vitest run src/tests/i18n`, `pnpm build`, and `pnpm test:unit` passed with 7 tests.
+- Next: implement skeleton configs and deterministic result-first/narrative planning.
