@@ -185,3 +185,21 @@ test('e2e export metadata switch does not trigger render-plan API', async ({ pag
   await page.waitForTimeout(900)
   expect(renderPlanRequests).toBe(afterInitial)
 })
+
+test('e2e density and theme axes update projection without unnecessary model calls', async ({ page }) => {
+  let renderPlanRequests = 0
+  page.on('request', (request) => {
+    if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
+  })
+  await page.goto('/')
+  await page.getByLabel('Density').selectOption('per-screen')
+  await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('article.page.per-screen')).toBeVisible()
+
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  const afterBrief = renderPlanRequests
+  await page.getByLabel('Theme').selectOption('dark-studio')
+  await expect.poll(async () => page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')).toContain('data-theme="dark-studio"')
+  await page.waitForTimeout(900)
+  expect(renderPlanRequests).toBe(afterBrief)
+})

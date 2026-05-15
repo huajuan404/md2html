@@ -5947,3 +5947,10 @@
 
 - Updated GitHub Actions to run `pnpm test:all`, so unit, visual README audit, and E2E acceptance all run in CI.
 - Prior push CI passed for build/unit/E2E; this checkpoint extends CI coverage to the new visual suite.
+
+
+## 2026-05-15T11:10:53 — axis behavior acceptance checkpoint
+
+- Added E2E coverage that density switching to per-screen changes the projection structure.
+- Added E2E coverage that theme-only switching updates exported preview theme without calling `/api/render-plan`.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` (16 tests), and `pnpm test:all` passed.
