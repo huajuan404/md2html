@@ -14,7 +14,10 @@
     "test:invariant": "vitest run src/tests/invariant/",
     "test:visual": "playwright test --grep visual",
     "test:e2e": "playwright test --grep e2e",
-    "test:all": "pnpm test:unit && pnpm test:visual && pnpm test:e2e"
+    "test:all": "pnpm test:unit && pnpm test:visual && pnpm test:e2e",
+    "dev:mock": "MD2HTML_LLM_PROVIDER=mock vite",
+    "dev:claude": "MD2HTML_LLM_PROVIDER=claude vite",
+    "dev:codex": "MD2HTML_LLM_PROVIDER=codex vite"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "latest",

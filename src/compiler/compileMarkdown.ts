@@ -13,6 +13,7 @@ export type CompileContext = {
   lastResult?: CompileResult
   cache?: CompileCache
   forceRelayout?: boolean
+  renderPlanOverride?: RenderPlan
 }
 
 export function createCompileCache(): CompileCache {
@@ -28,7 +29,9 @@ export function compileMarkdownToHtml(markdown: string, options: CompileOptions,
   let renderPlan: RenderPlan
   let fellBackToFaithful = false
 
-  if (options.logic !== 'none' && context.lastResult && !context.forceRelayout && shape === lastShape) {
+  if (context.renderPlanOverride) {
+    renderPlan = context.renderPlanOverride
+  } else if (options.logic !== 'none' && context.lastResult && !context.forceRelayout && shape === lastShape) {
     renderPlan = context.lastResult.renderPlan
   } else if (options.logic !== 'none' && context.cache?.has(cacheKey)) {
     renderPlan = context.cache.get(cacheKey)!

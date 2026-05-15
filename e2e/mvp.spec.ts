@@ -64,3 +64,11 @@ test('e2e UI language switch does not change preview HTML', async ({ page }) => 
   const after = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
   expect(after).toBe(before)
 })
+
+
+test('e2e non-faithful preset applies a local model render plan through the server bridge', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('Preset').selectOption('brief')
+  await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
+  await expect(page.frameLocator('iframe[title="HTML projection preview"]').locator('[data-render-node]').first()).toBeVisible()
+})

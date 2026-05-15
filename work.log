@@ -5879,3 +5879,14 @@
 - Added MIT LICENSE.
 - Added GitHub Actions CI for install, Playwright browser install, build, unit tests, and E2E tests.
 - Next: run full audit and decide whether any acceptance gaps must be closed before final handoff.
+
+
+## 2026-05-15T10:41:17 — local model bridge checkpoint
+
+- Implemented API-free model path via local Vite bridge `/api/render-plan`.
+- Added server-side RenderPlan validation so model output cannot invent source block IDs or skeleton kinds.
+- Added local providers: mock, Claude CLI, Codex CLI, plus custom shell command hook.
+- Frontend now debounces non-faithful modes, reuses model plans for same document shape, falls back to deterministic rendering, and shows model status.
+- Verified README fixture path with Playwright using `MD2HTML_LLM_PROVIDER=mock`: non-faithful preset applied local model render plan through the bridge.
+- Local provider check: `claude auth status` shows logged in, but a tiny `claude --print` call hit the current usage limit; `codex exec` tiny JSON prompt succeeded.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed.

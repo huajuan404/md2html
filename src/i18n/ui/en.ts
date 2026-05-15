@@ -28,4 +28,11 @@ export const uiEn = {
   auto: 'Auto',
   zh: 'Chinese',
   en: 'English',
+  modelStatus: 'Model',
+  deterministic: 'Deterministic',
+  modelWaiting: 'Waiting',
+  modelRunning: 'Re-layouting',
+  modelApplied: 'Applied',
+  modelFallback: 'Fallback',
+  modelReused: 'Reused',
 } as const

@@ -28,4 +28,11 @@ export const uiZh = {
   auto: '自动检测',
   zh: '中文',
   en: '英文',
+  modelStatus: '模型',
+  deterministic: '确定性',
+  modelWaiting: '等待',
+  modelRunning: '重排中',
+  modelApplied: '已应用',
+  modelFallback: '已回落',
+  modelReused: '复用计划',
 } as const

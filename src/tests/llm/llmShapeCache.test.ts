@@ -60,4 +60,18 @@ describe('LLM shape and cache gates', () => {
 
     expect(llm.invoke).toHaveBeenCalledTimes(1)
   })
+
+  test('renderPlanOverride renders a server-provided model plan without invoking local compiler LLM', () => {
+    const llm: LlmClient = { invoke: vi.fn((request) => request.fallbackPlan) }
+    const fallback = compileMarkdownToHtml(md(), options)
+    const overridePlan = {
+      ...fallback.renderPlan,
+      nodes: fallback.renderPlan.nodes.map((node, index) => index === 0 ? { ...node, title: 'server model plan' } : node),
+    }
+
+    const result = compileMarkdownToHtml(md(), options, { llm, renderPlanOverride: overridePlan })
+
+    expect(llm.invoke).not.toHaveBeenCalled()
+    expect(result.renderPlan.nodes[0].title).toBe('server model plan')
+  })
 })
