@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.playwright/
+test-results/
+coverage/
+.DS_Store
+*.log
+!work.log
+
+.omx/
+*.tsbuildinfo

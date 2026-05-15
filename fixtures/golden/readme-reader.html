@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="zh" data-theme="editorial-light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>md2html — 把 Markdown 投影成 HTML 页面</title>
+  <style>
+    :root {
+      --serif: "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "Source Han Serif", Georgia, "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      --max: 740px;
+    }
+    :root, [data-theme="editorial-light"] {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --surface-alt: #f4ede0;
+      --text: #1f1c18;
+      --muted: #5d574e;
+      --accent: #b46a2c;
+      --accent-soft: rgba(180, 106, 44, 0.1);
+      --border: #e8dfce;
+      --body-font: var(--serif);
+    }
+    [data-theme="dense-brief"] {
+      --bg: #f6f6f9;
+      --surface: #ffffff;
+      --surface-alt: #eeeef3;
+      --text: #0e1116;
+      --muted: #5a6273;
+      --accent: #5b5bd6;
+      --accent-soft: rgba(91, 91, 214, 0.12);
+      --border: #e3e3eb;
+      --body-font: var(--sans);
+    }
+    [data-theme="dark-studio"] {
+      --bg: #0e1116;
+      --surface: #181a20;
+      --surface-alt: #21242b;
+      --text: #f0f0f2;
+      --muted: #9098a8;
+      --accent: #8b88f7;
+      --accent-soft: rgba(139, 136, 247, 0.18);
+      --border: #2a2d35;
+      --body-font: var(--sans);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body-font);
+      font-size: 17px;
+      line-height: 1.78;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr min(var(--max), calc(100% - 320px)) 240px 1fr;
+      gap: 48px;
+      align-items: start;
+      padding: 80px 32px 120px;
+    }
+    .main { grid-column: 2; }
+    aside.toc {
+      grid-column: 3;
+      position: sticky;
+      top: 80px;
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--muted);
+      border-left: 1px solid var(--border);
+      padding-left: 20px;
+    }
+    aside.toc h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin: 0 0 14px;
+      font-weight: 600;
+    }
+    aside.toc ol { list-style: none; margin: 0; padding: 0; }
+    aside.toc li { margin: 0 0 10px; }
+    aside.toc a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+      display: block;
+    }
+    aside.toc a:hover { color: var(--accent); }
+    aside.toc a .num {
+      display: inline-block;
+      width: 22px;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    /* Hero */
+    .hero { margin-bottom: 72px; }
+    .hero h1 {
+      font-family: var(--sans);
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+    .hero .punch {
+      font-family: var(--serif);
+      font-size: 24px;
+      line-height: 1.5;
+      color: var(--text);
+      font-weight: 600;
+      font-style: italic;
+      margin: 0 0 22px;
+      padding-left: 18px;
+      border-left: 3px solid var(--accent);
+      max-width: 640px;
+    }
+    .hero .tagline {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin: 0 0 18px;
+      max-width: 640px;
+    }
+    .hero .at-a-glance {
+      font-family: var(--sans);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 0;
+    }
+    .hero .at-a-glance .sep { color: var(--accent); margin: 0 7px; }
+    .hero hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 48px 0 0;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 64px;
+    }
+    section > h2 {
+      font-family: var(--sans);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 0 0 8px;
+    }
+    section > h2 .num {
+      display: inline-block;
+      margin-right: 10px;
+      opacity: 0.6;
+    }
+    section > h2 + .section-title {
+      font-family: var(--sans);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin: 0 0 32px;
+      color: var(--text);
+    }
+    section p {
+      margin: 0 0 20px;
+    }
+    section ul, section ol {
+      margin: 0 0 24px;
+      padding-left: 24px;
+    }
+    section li { margin: 0 0 10px; }
+    section h3 {
+      font-family: var(--sans);
+      font-size: 20px;
+      font-weight: 600;
+      margin: 36px 0 12px;
+      color: var(--text);
+    }
+    section strong { font-weight: 700; }
+    section a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Pull quote */
+    blockquote {
+      margin: 32px 0;
+      padding: 24px 0 24px 28px;
+      border-left: 3px solid var(--accent);
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.55;
+      font-style: italic;
+      color: var(--text);
+      background: linear-gradient(90deg, var(--accent-soft), transparent);
+    }
+
+    /* Comparison table — Markdown vs HTML */
+    .compare {
+      margin: 28px 0 32px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .compare table { width: 100%; border-collapse: collapse; }
+    .compare th, .compare td {
+      padding: 12px 18px;
+      font-family: var(--sans);
+      font-size: 14.5px;
+      line-height: 1.5;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare th {
+      background: var(--surface-alt);
+      font-weight: 700;
+      color: var(--text);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: left;
+      width: 50%;
+      border-bottom: 2px solid var(--border);
+    }
+    .compare th:first-child { color: var(--muted); }
+    .compare th:last-child { color: var(--accent); }
+    .compare tr:last-child td { border-bottom: none; }
+    .compare td:first-child { color: var(--muted); border-right: 1px dashed var(--border); }
+
+    /* Preset table */
+    table.preset {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-family: var(--sans);
+      font-size: 15px;
+    }
+    table.preset th, table.preset td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    table.preset th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 2px solid var(--border);
+    }
+    table.preset td:first-child { font-weight: 600; color: var(--accent); }
+
+    /* Status table */
+    table.status {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-family: var(--sans);
+      font-size: 14.5px;
+    }
+    table.status th, table.status td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    table.status th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 2px solid var(--border);
+    }
+    table.status td:last-child { white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--surface-alt);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Design choice subsections — slightly indented + numbered */
+    .design-choice {
+      margin: 36px 0 0;
+    }
+    .design-choice h3 {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .design-choice h3 .idx {
+      font-family: var(--sans);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Appendix */
+    .appendix {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .appendix h2 {
+      font-family: var(--sans);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+    .appendix ul { font-size: 15px; color: var(--muted); }
+    .appendix table.credits {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+    .appendix table.credits th, .appendix table.credits td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .appendix table.credits th {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .appendix table.credits td:first-child { white-space: nowrap; padding-right: 28px; }
+
+    .credit-note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 16px;
+      font-style: italic;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; padding: 48px 24px 80px; }
+      .main { grid-column: 1; }
+      aside.toc { display: none; }
+      .hero h1 { font-size: 40px; }
+      .hero .punch { font-size: 20px; }
+      .hero .tagline { font-size: 16px; }
+      .theme-bar-inner { padding: 0 24px; }
+    }
+
+    /* Theme switcher */
+    .theme-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      font-family: var(--sans);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .theme-bar-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .theme-bar-label {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .theme-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .theme-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .theme-bar-spacer { flex: 1; }
+    .theme-bar-note { color: var(--muted); font-size: 11px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <nav class="theme-bar" aria-label="theme switcher" data-render-node="theme-bar" data-source-blocks="">
+    <div class="theme-bar-inner">
+      <span class="theme-bar-label">主题</span>
+      <button class="theme-btn active" data-theme="editorial-light">Editorial Light</button>
+      <button class="theme-btn" data-theme="dense-brief">Dense Brief</button>
+      <button class="theme-btn" data-theme="dark-studio">Dark Studio</button>
+      <span class="theme-bar-spacer"></span>
+      <span class="theme-bar-note">三轴正交:换主题不改骨架</span>
+    </div>
+  </nav>
+  <div class="layout">
+    <main class="main">
+
+      <header class="hero"
+              data-render-node="node-1"
+              data-source-blocks="block-1 block-2 block-3 block-4">
+        <h1>md2html</h1>
+        <p class="punch">Markdown 适合写,HTML 适合读。md2html 让你继续写 Markdown,AI 重新组织成 HTML。</p>
+        <p class="tagline">把 ChatGPT / Claude / Codex / Gemini 输出的长 Markdown、研究笔记、推文整理、报告,实时投影成可读、可分享、可下载的 HTML 页面。</p>
+        <p class="at-a-glance">3 个独立旋钮<span class="sep">·</span>9 份骨架<span class="sep">·</span>4 个一键预设<span class="sep">·</span>0 个 API key<span class="sep">·</span>单文件 HTML 下载<span class="sep">·</span>本地优先</p>
+        <hr />
+      </header>
+
+      <section data-render-node="node-2"
+               data-source-blocks="block-5 block-6 block-7 block-8 block-9 block-10">
+        <h2><span class="num">01</span>背景</h2>
+        <div class="section-title">为什么需要这个</div>
+
+        <p>灵感来自 <a href="https://x.com/karpathy/status/2053872850101285137">Karpathy 关于 AI HTML 输出的那条 X 长帖</a>(397 条回复)—— AI 输出正在从纯文本 → Markdown → HTML → 更高带宽的视觉媒介演进。</p>
+
+        <p>但两件事的好处刚好相反:</p>
+
+        <div class="compare">
+          <table>
+            <thead>
+              <tr><th>Markdown</th><th>HTML</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>适合人类编辑</td><td>适合人类消费</td></tr>
+              <tr><td>纯文本、可 diff、好维护</td><td>有布局、有视觉层级</td></tr>
+              <tr><td>复制到推特里像源代码</td><td>截图就是一张海报</td></tr>
+              <tr><td>同样的内容投不同平台都要重排</td><td>一次产出多渠道适配</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>普通 Markdown 渲染器把"适合编辑"的格式直接当成"适合消费"的格式——结果两头都不讨好,HTML 只是"Markdown 加了点字号差异"。</p>
+
+        <p>md2html 不做这个。<strong>它继续让你用 Markdown 编辑,但用 AI 在产出 HTML 这一步重新组织内容</strong>:决定先说什么、再说什么、一屏装多少、看起来什么风格。</p>
+      </section>
+
+      <section data-render-node="node-3"
+               data-source-blocks="block-11 block-12 block-13 block-14">
+        <h2><span class="num">02</span>问题</h2>
+        <div class="section-title">适用人群</div>
+
+        <h3>谁该用</h3>
+        <ul>
+          <li>用 ChatGPT / Claude / Codex / Gemini 输出长 Markdown,想转成像样页面的人。</li>
+          <li>把研究笔记、推文整理、访谈记录、报告变成阅读页 / 简报 / 卡片流的人。</li>
+          <li>想保留 Markdown 可编辑性,但希望输出不只是"文档预览"的人。</li>
+        </ul>
+
+        <h3>谁不该用</h3>
+        <ul>
+          <li>只需要普通 Markdown 编辑器的人——用 Typora / StackEdit 就好。</li>
+          <li>需要多人实时协作的人——本工具是单人本地优先。</li>
+          <li>需要手写 HTML/CSS 的前端开发者——本工具不让你编辑 HTML。</li>
+        </ul>
+      </section>
+
+      <section data-render-node="node-4"
+               data-source-blocks="block-15 block-16 block-17 block-18 block-19 block-20 block-21 block-22 block-23 block-24">
+        <h2><span class="num">03</span>方案</h2>
+        <div class="section-title">三个独立旋钮</div>
+        <p>工具栏顶部三个下拉,互不影响:</p>
+
+        <h3>逻辑:内容的骨架</h3>
+        <p>回答"先说什么、再说什么":</p>
+        <ul>
+          <li><strong>原文顺序</strong>:按 Markdown 原结构铺。</li>
+          <li><strong>结果先行</strong>:AI 把结论抽到顶上,证据后置。</li>
+          <li><strong>时序展开</strong>:AI 还原"背景 → 问题 → 方案 → 结果"的论证流。</li>
+        </ul>
+
+        <h3>密度:一屏装多少</h3>
+        <p>回答"怎么把内容铺进屏幕":</p>
+        <ul>
+          <li><strong>宽松</strong>:长滚动页,留白宽。</li>
+          <li><strong>紧凑</strong>:长滚动页,多栏分区。</li>
+          <li><strong>一屏一页</strong>:分页,一屏一个核心观点。</li>
+        </ul>
+
+        <h3>主题:视觉风格</h3>
+        <p>控制配色、字体、阴影等纯样式。提供三套内置主题,未来可扩展。</p>
+      </section>
+
+      <section data-render-node="node-5"
+               data-source-blocks="block-25 block-26 block-27">
+        <h2><span class="num">04</span>方案</h2>
+        <div class="section-title">一键预设</div>
+        <p>不想拨三个下拉?四个一键预设:</p>
+        <table class="preset">
+          <thead>
+            <tr><th>预设</th><th>适合场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Faithful</td><td>验证解析、对照原文</td></tr>
+            <tr><td>Reader</td><td>文章、研究笔记、访谈稿</td></tr>
+            <tr><td>Brief</td><td>AI 长回答、决策备忘、研究报告</td></tr>
+            <tr><td>Deck</td><td>简报、传播卡片、教学序列</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section data-render-node="node-6"
+               data-source-blocks="block-28 block-29 block-30 block-31 block-32 block-33 block-34 block-35 block-36 block-37 block-38">
+        <h2><span class="num">05</span>原则</h2>
+        <div class="section-title">5 个核心设计选择</div>
+
+        <div class="design-choice">
+          <h3><span class="idx">01</span>AI 只在重排这一步参与,不直接产出 HTML</h3>
+          <p>AI 的工作被严格限定为"读懂 Markdown 段落的角色,把它们塞进骨架的对应区"。HTML 由确定性 renderer 产出。这避免了 AI 输出失控、source map 失守,也避免产品退化成另一个"AI 一次性吐 HTML"的工具。</p>
+        </div>
+
+        <div class="design-choice">
+          <h3><span class="idx">02</span>改错别字不触发 AI 重排</h3>
+          <p>只有改变文档"形状"的编辑(加段、加标题、删段、改 heading 级)才触发 AI 重新组织。改个词、修个标点、句内调整—— AI 完全不参与,渲染稳定,不浪费 token。</p>
+        </div>
+
+        <div class="design-choice">
+          <h3><span class="idx">03</span>每个 HTML 区块都知道自己来自 Markdown 哪几段</h3>
+          <p>右侧 HTML 的每个主要区块都标注了"我来自第几行到第几行"。点击右侧任一区块,左侧自动跳到对应源文本。<strong>这是同类工具不做的事</strong>——也是 md2html 的护城河。</p>
+        </div>
+
+        <div class="design-choice">
+          <h3><span class="idx">04</span>UI 语言和内容语言独立</h3>
+          <p>切换工具自身的语言(中 / 英)不影响输出。中文 Markdown 永远产出中文标签的 HTML,不管编辑器 UI 是中是英——因为导出的 HTML 是给读者的,不是给编辑者的。</p>
+        </div>
+
+        <div class="design-choice">
+          <h3><span class="idx">05</span>骨架由产品团队预写,不让用户写</h3>
+          <p>每个(逻辑, 密度)组合对应一份预写的骨架配置,声明"这种形态下页面应该有哪几个区"。9 份骨架共同决定输出形态。用户只选预设或拨三轴,不需要懂"骨架"是什么。</p>
+        </div>
+      </section>
+
+      <section data-render-node="node-7"
+               data-source-blocks="block-39 block-40">
+        <h2><span class="num">06</span>使用</h2>
+        <div class="section-title">怎么用</div>
+        <ol>
+          <li>浏览器打开 md2html。</li>
+          <li>Markdown 粘到左侧,或上传 <code>.md</code> 文件。</li>
+          <li>工具栏选预设(或独立调三轴)。</li>
+          <li>右侧实时显示。点击右侧节点,左侧会高亮源文本。</li>
+          <li>点下载,得到单文件 HTML。</li>
+        </ol>
+      </section>
+
+      <section data-render-node="node-8"
+               data-source-blocks="block-43 block-44">
+        <h2><span class="num">07</span>现状</h2>
+        <div class="section-title">状态</div>
+        <table class="status">
+          <thead>
+            <tr><th>模块</th><th>状态</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Markdown 解析 + source block 切分</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>形状变化驱动的重编译</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>3 逻辑 × 3 密度 × 3 主题</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>4 个一键预设</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>Source map 双向点击定位</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>UI / 内容语言双轨</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>单文件 HTML 下载</td><td>🛠 v0.1 规划</td></tr>
+            <tr><td>骨架模板插件市场</td><td>⏳ v0.2 规划</td></tr>
+            <tr><td>AI 局部 patch</td><td>⏳ v0.3 规划</td></tr>
+            <tr><td>多人协作 / 云端发布</td><td>⏳ 未来</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="appendix"
+               data-render-node="node-9"
+               data-source-blocks="block-41 block-42 block-45 block-46 block-47 block-48">
+        <h2>附录 · 离线本地 + 致谢</h2>
+        <ul>
+          <li>编辑、渲染、下载全在浏览器里完成。</li>
+          <li>不上传任何内容到云端。</li>
+          <li>AI 重排需要联网调 LLM,但延迟触发、缓存命中跳过,控制成本。</li>
+          <li>导出 HTML 内联所有 CSS/JS,浏览器双击即开。</li>
+        </ul>
+        <table class="credits">
+          <thead>
+            <tr><th>项目</th><th>用在哪</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><a href="https://x.com/karpathy/status/2053872850101285137">Karpathy AI/HTML thread</a></td><td>产品灵感源 —— "AI 输出从文本到 HTML"的最初论证</td></tr>
+            <tr><td><a href="https://github.com/nexu-io/html-anything">nexu-io/html-anything</a></td><td>竞品对照 —— surface 编排、sandbox iframe + SSE 流式生成</td></tr>
+            <tr><td><a href="https://github.com/unifiedjs/unified">unified / remark</a></td><td>Markdown 解析 + AST 位置保留,为 source map 提供基础</td></tr>
+            <tr><td><a href="https://codemirror.net/">CodeMirror 6</a></td><td>左侧 Markdown 编辑器</td></tr>
+            <tr><td><a href="https://vitejs.dev/">Vite + React</a></td><td>应用骨架</td></tr>
+          </tbody>
+        </table>
+        <p class="credit-note">详细的领域术语见 <code>CONTEXT.md</code>,产品决策见 <code>docs/adr/</code>。</p>
+      </section>
+
+    </main>
+
+    <aside class="toc"
+           data-render-node="node-toc"
+           data-source-blocks="">
+      <h4>目录</h4>
+      <ol>
+        <li><a href="#node-2"><span class="num">01</span>为什么需要这个</a></li>
+        <li><a href="#node-3"><span class="num">02</span>适用人群</a></li>
+        <li><a href="#node-4"><span class="num">03</span>三个独立旋钮</a></li>
+        <li><a href="#node-5"><span class="num">04</span>一键预设</a></li>
+        <li><a href="#node-6"><span class="num">05</span>5 个设计选择</a></li>
+        <li><a href="#node-7"><span class="num">06</span>怎么用</a></li>
+        <li><a href="#node-8"><span class="num">07</span>状态</a></li>
+      </ol>
+    </aside>
+  </div>
+  <script>
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+  </script>
+</body>
+</html>

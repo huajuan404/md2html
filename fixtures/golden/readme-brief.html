@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="zh" data-theme="dense-brief">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>md2html — Brief</title>
+  <style>
+    :root {
+      --positive: #1f8a3a;
+      --negative: #c0392b;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04);
+      --serif: "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "Source Han Serif", Georgia, "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    }
+    :root, [data-theme="dense-brief"] {
+      --bg: #f6f6f9;
+      --surface: #ffffff;
+      --surface-alt: #eeeef3;
+      --text: #0e1116;
+      --muted: #5a6273;
+      --accent: #5b5bd6;
+      --accent-soft: #ecebfc;
+      --border: #e3e3eb;
+      --body-font: var(--sans);
+    }
+    [data-theme="editorial-light"] {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --surface-alt: #f4ede0;
+      --text: #1f1c18;
+      --muted: #5d574e;
+      --accent: #b46a2c;
+      --accent-soft: rgba(180, 106, 44, 0.12);
+      --border: #e8dfce;
+      --body-font: var(--serif);
+    }
+    [data-theme="dark-studio"] {
+      --bg: #0e1116;
+      --surface: #181a20;
+      --surface-alt: #21242b;
+      --text: #f0f0f2;
+      --muted: #9098a8;
+      --accent: #8b88f7;
+      --accent-soft: rgba(139, 136, 247, 0.18);
+      --border: #2a2d35;
+      --body-font: var(--sans);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body-font);
+      font-size: 14.5px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 48px 32px 80px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Hero */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 56px;
+      align-items: end;
+      padding: 0 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1;
+      margin: 0 0 12px;
+    }
+    .hero .kicker {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 0 0 14px;
+    }
+    .hero .tagline {
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* At-a-glance bar */
+    .glance {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      align-items: center;
+      padding: 14px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .glance .glance-item { padding: 0 14px; border-right: 1px solid var(--border); }
+    .glance .glance-item:last-child { border-right: none; }
+    .glance .glance-num {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    /* Summary */
+    .summary {
+      background: var(--accent);
+      color: white;
+      border-radius: 14px;
+      padding: 32px 36px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .summary::before {
+      content: "结论";
+      position: absolute;
+      top: 16px;
+      right: 24px;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      opacity: 0.55;
+      font-weight: 600;
+    }
+    .summary .text {
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+      margin: 0;
+      max-width: 820px;
+    }
+    .summary .text strong {
+      background: rgba(255, 255, 255, 0.18);
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    /* Section heading */
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin: 40px 0 16px;
+    }
+    .section-head .index {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .section-head h2 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+
+    /* Compare card — Markdown vs HTML */
+    .compare-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .compare-card .compare-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--surface-alt);
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-card .compare-head .col {
+      padding: 14px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .compare-card .compare-head .col:first-child { color: var(--muted); border-right: 1px solid var(--border); }
+    .compare-card .compare-head .col:last-child { color: var(--accent); }
+    .compare-card .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-card .row:last-child { border-bottom: none; }
+    .compare-card .row .cell {
+      padding: 14px 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .compare-card .row .cell:first-child {
+      color: var(--muted);
+      border-right: 1px dashed var(--border);
+    }
+    .compare-card .row .cell:last-child {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .karpathy-cite {
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      margin: 12px 0 0;
+    }
+
+    /* Card grid: three knobs */
+    .cards3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 22px 20px;
+      box-shadow: var(--shadow);
+    }
+    .card .pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 9px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    .card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    .card .lead {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 14px;
+    }
+    .card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 13.5px;
+    }
+    .card ul li {
+      padding: 6px 0;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .card ul li:first-child { border-top: none; }
+    .card ul li strong {
+      flex-shrink: 0;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 64px;
+    }
+    .card ul li span { color: var(--muted); }
+
+    /* Design choice grid (5 cards: 3-row 2 + 3 layout via 6-col grid) */
+    .design-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+    }
+    .design-grid .design-card {
+      grid-column: span 2;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .design-grid .design-card.featured {
+      grid-column: span 3;
+      background: linear-gradient(135deg, var(--surface) 0%, var(--accent-soft) 100%);
+      border-color: var(--accent);
+    }
+    .design-grid .design-card.wide {
+      grid-column: span 3;
+    }
+    .design-grid .design-card .idx {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .design-grid .design-card h3 {
+      font-size: 15.5px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+    }
+    .design-grid .design-card p {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0;
+    }
+    .design-grid .design-card p strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* Preset table */
+    .preset-table {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .preset-table table { width: 100%; border-collapse: collapse; }
+    .preset-table th, .preset-table td {
+      padding: 13px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .preset-table th {
+      background: var(--surface-alt);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .preset-table tr:last-child td { border-bottom: none; }
+    .preset-table td:first-child {
+      font-weight: 700;
+      color: var(--accent);
+      width: 110px;
+    }
+
+    /* Side by side */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+    }
+    .panel.no { border-color: rgba(192, 57, 43, 0.3); background: rgba(192, 57, 43, 0.05); }
+    .panel h4 {
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 12px;
+      letter-spacing: -0.005em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel.yes h4::before { content: "✓"; color: var(--positive); font-weight: 700; }
+    .panel.no h4::before { content: "✕"; color: var(--negative); font-weight: 700; }
+    .panel ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .panel ul li { padding: 5px 0; }
+    .panel ul li::before {
+      content: "·"; margin-right: 8px; color: var(--accent); font-weight: 700;
+    }
+
+    /* Quickstart */
+    .quickstart {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .quickstart ol {
+      list-style: none;
+      counter-reset: qs;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+    .quickstart li {
+      counter-increment: qs;
+      padding-left: 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .quickstart li::before {
+      content: counter(qs);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .quickstart li code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--surface-alt);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Status grid */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .status-item .badge {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-family: var(--mono);
+    }
+    .status-item .badge.now { background: rgba(245, 158, 11, 0.18); color: #f59e0b; }
+    .status-item .badge.next { background: var(--accent-soft); color: var(--accent); }
+    .status-item .badge.later { background: var(--surface-alt); color: var(--muted); }
+    .status-item .label { flex: 1; color: var(--text); font-weight: 500; }
+
+    /* Appendix */
+    details.appendix {
+      margin-top: 40px;
+      padding: 0;
+      background: transparent;
+    }
+    details.appendix > summary {
+      list-style: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 14px 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    details.appendix > summary::after {
+      content: "+";
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+      margin-left: auto;
+    }
+    details.appendix[open] > summary::after { content: "−"; }
+    details.appendix .appendix-body {
+      padding: 12px 0 0;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 32px;
+    }
+    details.appendix ul {
+      font-size: 13.5px;
+      color: var(--muted);
+      padding: 0 0 0 18px;
+      margin: 0;
+    }
+    details.appendix .credits {
+      font-size: 13px;
+    }
+    details.appendix .credits .credit {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    details.appendix .credits .credit:last-child { border-bottom: none; }
+    details.appendix .credits .credit .name { color: var(--accent); font-weight: 600; }
+    details.appendix .credits .credit .role { color: var(--muted); }
+    details.appendix .credit-note {
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; gap: 24px; }
+      .hero h1 { font-size: 40px; }
+      .cards3 { grid-template-columns: 1fr; }
+      .design-grid { grid-template-columns: 1fr; }
+      .design-grid .design-card, .design-grid .design-card.featured, .design-grid .design-card.wide { grid-column: span 1; }
+      .compare-card .compare-head, .compare-card .row { grid-template-columns: 1fr; }
+      .compare-card .row .cell:first-child { border-right: none; border-bottom: 1px dashed var(--border); }
+      .two-col { grid-template-columns: 1fr; }
+      .quickstart ol { grid-template-columns: 1fr 1fr; }
+      details.appendix .appendix-body { grid-template-columns: 1fr; }
+      .theme-bar-inner { padding: 0 24px; }
+    }
+
+    /* Theme switcher */
+    .theme-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      font-family: var(--sans);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .theme-bar-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .theme-bar-label {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .theme-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .theme-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .theme-bar-spacer { flex: 1; }
+    .theme-bar-note { color: var(--muted); font-size: 11px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <nav class="theme-bar" aria-label="theme switcher" data-render-node="theme-bar" data-source-blocks="">
+    <div class="theme-bar-inner">
+      <span class="theme-bar-label">主题</span>
+      <button class="theme-btn" data-theme="editorial-light">Editorial Light</button>
+      <button class="theme-btn active" data-theme="dense-brief">Dense Brief</button>
+      <button class="theme-btn" data-theme="dark-studio">Dark Studio</button>
+      <span class="theme-bar-spacer"></span>
+      <span class="theme-bar-note">三轴正交:换主题不改骨架</span>
+    </div>
+  </nav>
+  <div class="page">
+
+    <header class="hero"
+            data-render-node="node-1"
+            data-source-blocks="block-1 block-3 block-4">
+      <div>
+        <p class="kicker">本地 · 单文件 · 无需账号</p>
+        <h1>md2html</h1>
+      </div>
+      <p class="tagline">把 ChatGPT / Claude / Codex / Gemini 输出的长 Markdown、研究笔记、推文整理、报告,实时投影成可读、可分享、可下载的 HTML 页面。</p>
+    </header>
+
+    <div class="glance"
+         data-render-node="node-glance"
+         data-source-blocks="block-4">
+      <div class="glance-item"><span class="glance-num">3</span>独立旋钮</div>
+      <div class="glance-item"><span class="glance-num">9</span>份骨架</div>
+      <div class="glance-item"><span class="glance-num">4</span>个一键预设</div>
+      <div class="glance-item"><span class="glance-num">0</span>个 API key</div>
+      <div class="glance-item">单文件 HTML 下载</div>
+      <div class="glance-item">本地优先</div>
+    </div>
+
+    <div class="summary"
+         data-render-node="node-2"
+         data-source-blocks="block-2">
+      <p class="text"><strong>Markdown 适合写,HTML 适合读。</strong>md2html 让你继续写 Markdown,AI 重新组织成 HTML——而不只是给 Markdown 加点字号差异。</p>
+    </div>
+
+    <div class="section-head">
+      <span class="index">01 · 痛点</span>
+      <h2>Markdown 和 HTML 的好处刚好相反</h2>
+    </div>
+
+    <div class="compare-card"
+         data-render-node="node-3"
+         data-source-blocks="block-5 block-7 block-8 block-9 block-10">
+      <div class="compare-head">
+        <div class="col">Markdown</div>
+        <div class="col">HTML</div>
+      </div>
+      <div class="row"><div class="cell">适合人类编辑</div><div class="cell">适合人类消费</div></div>
+      <div class="row"><div class="cell">纯文本、可 diff、好维护</div><div class="cell">有布局、有视觉层级</div></div>
+      <div class="row"><div class="cell">复制到推特里像源代码</div><div class="cell">截图就是一张海报</div></div>
+      <div class="row"><div class="cell">同样的内容投不同平台都要重排</div><div class="cell">一次产出多渠道适配</div></div>
+    </div>
+    <p class="karpathy-cite"
+       data-render-node="node-3-cite"
+       data-source-blocks="block-6">
+      灵感来自 <a href="https://x.com/karpathy/status/2053872850101285137">Karpathy 关于 AI HTML 输出的那条 X 长帖</a>(397 条回复)—— AI 输出正在从纯文本 → Markdown → HTML 演进。
+    </p>
+
+    <div class="section-head">
+      <span class="index">02 · 核心特性</span>
+      <h2>三个独立旋钮控制输出</h2>
+    </div>
+
+    <div class="cards3"
+         data-render-node="node-4"
+         data-source-blocks="block-15 block-16">
+      <div class="card"
+           data-render-node="node-4-1"
+           data-source-blocks="block-17 block-18 block-19">
+        <span class="pill">逻辑</span>
+        <h3>内容的骨架</h3>
+        <p class="lead">先说什么、再说什么。</p>
+        <ul>
+          <li><strong>原文顺序</strong><span>按 Markdown 原结构铺</span></li>
+          <li><strong>结果先行</strong><span>结论抽到顶上,证据后置</span></li>
+          <li><strong>时序展开</strong><span>背景 → 问题 → 方案 → 结果</span></li>
+        </ul>
+      </div>
+      <div class="card"
+           data-render-node="node-4-2"
+           data-source-blocks="block-20 block-21 block-22">
+        <span class="pill">密度</span>
+        <h3>一屏装多少</h3>
+        <p class="lead">怎么把内容铺进屏幕。</p>
+        <ul>
+          <li><strong>宽松</strong><span>长滚动页,留白宽</span></li>
+          <li><strong>紧凑</strong><span>长滚动页,多栏分区</span></li>
+          <li><strong>一屏一页</strong><span>分页,一屏一个观点</span></li>
+        </ul>
+      </div>
+      <div class="card"
+           data-render-node="node-4-3"
+           data-source-blocks="block-23 block-24">
+        <span class="pill">主题</span>
+        <h3>视觉风格</h3>
+        <p class="lead">看起来什么风格。</p>
+        <ul>
+          <li><strong>配色</strong><span>色系、强调色</span></li>
+          <li><strong>字体</strong><span>字族、字重</span></li>
+          <li><strong>形态</strong><span>圆角、阴影、间距</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <span class="index">03 · 预设</span>
+      <h2>不想拨三个下拉?一键切预设</h2>
+    </div>
+
+    <div class="preset-table"
+         data-render-node="node-5"
+         data-source-blocks="block-25 block-26 block-27">
+      <table>
+        <thead>
+          <tr><th>预设</th><th>适合场景</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Faithful</td><td>验证解析、对照原文</td></tr>
+          <tr><td>Reader</td><td>文章、研究笔记、访谈稿</td></tr>
+          <tr><td>Brief</td><td>AI 长回答、决策备忘、研究报告</td></tr>
+          <tr><td>Deck</td><td>简报、传播卡片、教学序列</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-head">
+      <span class="index">04 · 设计原则</span>
+      <h2>5 个核心选择</h2>
+    </div>
+
+    <div class="design-grid"
+         data-render-node="node-6"
+         data-source-blocks="block-28">
+      <div class="design-card featured"
+           data-render-node="node-6-3"
+           data-source-blocks="block-33 block-34">
+        <span class="idx">03 · 护城河</span>
+        <h3>每个 HTML 区块都知道自己来自 Markdown 哪几段</h3>
+        <p>点击右侧任一区块,左侧自动跳到对应源文本。<strong>这是同类工具不做的事</strong>——也是 md2html 的护城河。</p>
+      </div>
+      <div class="design-card wide"
+           data-render-node="node-6-1"
+           data-source-blocks="block-29 block-30">
+        <span class="idx">01</span>
+        <h3>AI 只在重排这一步参与</h3>
+        <p>AI 的工作被严格限定为"读懂段落角色,塞进骨架对应区"。HTML 由确定性 renderer 产出,避免 AI 输出失控、source map 失守。</p>
+      </div>
+      <div class="design-card"
+           data-render-node="node-6-2"
+           data-source-blocks="block-31 block-32">
+        <span class="idx">02</span>
+        <h3>改错别字不触发 AI 重排</h3>
+        <p>只有改变文档"形状"的编辑才触发。改个词、修标点—— AI 完全不参与,渲染稳定,不浪费 token。</p>
+      </div>
+      <div class="design-card"
+           data-render-node="node-6-4"
+           data-source-blocks="block-35 block-36">
+        <span class="idx">04</span>
+        <h3>UI 语言和内容语言独立</h3>
+        <p>中文 Markdown 永远产出中文标签的 HTML,不管编辑器 UI 是中是英——导出 HTML 是给读者的,不是给编辑者的。</p>
+      </div>
+      <div class="design-card"
+           data-render-node="node-6-5"
+           data-source-blocks="block-37 block-38">
+        <span class="idx">05</span>
+        <h3>骨架产品团队预写,用户不参与</h3>
+        <p>9 份骨架共同决定输出形态。用户只选预设或拨三轴,不需要懂"骨架"是什么。</p>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <span class="index">05 · 适用人群</span>
+      <h2>它是给谁的?</h2>
+    </div>
+
+    <div class="two-col">
+      <div class="panel yes"
+           data-render-node="node-7"
+           data-source-blocks="block-11 block-12">
+        <h4>谁该用</h4>
+        <ul>
+          <li>用 ChatGPT / Claude / Codex / Gemini 输出长 Markdown,想转成像样页面</li>
+          <li>把研究笔记、推文整理、访谈记录、报告变成阅读页 / 简报 / 卡片流</li>
+          <li>想保留 Markdown 可编辑性,希望输出不只是"文档预览"</li>
+        </ul>
+      </div>
+      <div class="panel no"
+           data-render-node="node-8"
+           data-source-blocks="block-13 block-14">
+        <h4>谁不该用</h4>
+        <ul>
+          <li>只需要普通 Markdown 编辑器——用 Typora / StackEdit 就好</li>
+          <li>需要多人实时协作——本工具是单人本地优先</li>
+          <li>需要手写 HTML/CSS 的前端开发者——本工具不让你编辑 HTML</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <span class="index">06 · 怎么用</span>
+      <h2>5 步走通</h2>
+    </div>
+
+    <div class="quickstart"
+         data-render-node="node-9"
+         data-source-blocks="block-39 block-40">
+      <ol>
+        <li>浏览器打开 md2html</li>
+        <li>Markdown 粘到左侧,或上传 <code>.md</code></li>
+        <li>工具栏选预设或独立调三轴</li>
+        <li>右侧实时显示;点节点高亮源文本</li>
+        <li>点下载,得到单文件 HTML</li>
+      </ol>
+    </div>
+
+    <div class="section-head">
+      <span class="index">07 · 现状</span>
+      <h2>状态</h2>
+    </div>
+
+    <div class="status-grid"
+         data-render-node="node-10"
+         data-source-blocks="block-43 block-44">
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">Markdown 解析 + source block 切分</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">形状变化驱动的重编译</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">3 逻辑 × 3 密度 × 3 主题</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">4 个一键预设</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">Source map 双向点击定位</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">UI / 内容语言双轨</span></div>
+      <div class="status-item"><span class="badge now">v0.1</span><span class="label">单文件 HTML 下载</span></div>
+      <div class="status-item"><span class="badge next">v0.2</span><span class="label">骨架模板插件市场</span></div>
+      <div class="status-item"><span class="badge next">v0.3</span><span class="label">AI 局部 patch</span></div>
+      <div class="status-item"><span class="badge later">未来</span><span class="label">多人协作 / 云端发布</span></div>
+    </div>
+
+    <details class="appendix"
+             data-render-node="node-11"
+             data-source-blocks="block-41 block-42 block-45 block-46 block-47 block-48">
+      <summary>附录 · 离线本地 + 致谢</summary>
+      <div class="appendix-body">
+        <div>
+          <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin:0 0 10px;">离线、本地、无需账号</h4>
+          <ul>
+            <li>编辑、渲染、下载全在浏览器里完成</li>
+            <li>不上传任何内容到云端</li>
+            <li>AI 重排需要联网调 LLM,但延迟触发、缓存命中跳过,控制成本</li>
+            <li>导出 HTML 内联所有 CSS/JS,浏览器双击即开</li>
+          </ul>
+        </div>
+        <div class="credits">
+          <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin:0 0 10px;">致谢</h4>
+          <div class="credit"><span class="name"><a href="https://x.com/karpathy/status/2053872850101285137">Karpathy thread</a></span><span class="role">产品灵感源,AI 输出从文本到 HTML 的最初论证</span></div>
+          <div class="credit"><span class="name"><a href="https://github.com/nexu-io/html-anything">nexu-io/html-anything</a></span><span class="role">竞品对照,surface 编排、SSE 流式生成参考</span></div>
+          <div class="credit"><span class="name"><a href="https://github.com/unifiedjs/unified">unified / remark</a></span><span class="role">Markdown 解析 + AST 位置保留</span></div>
+          <div class="credit"><span class="name"><a href="https://codemirror.net/">CodeMirror 6</a></span><span class="role">Markdown 编辑器</span></div>
+          <div class="credit"><span class="name"><a href="https://vitejs.dev/">Vite + React</a></span><span class="role">应用骨架</span></div>
+          <p class="credit-note">详细领域术语见 <code>CONTEXT.md</code>,产品决策见 <code>docs/adr/</code>。</p>
+        </div>
+      </div>
+    </details>
+
+  </div>
+  <script>
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = btn.dataset.theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+  </script>
+</body>
+</html>

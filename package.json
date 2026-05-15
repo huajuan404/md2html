@@ -1,0 +1,39 @@
+{
+  "name": "md2html",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Source-mapped Markdown projection editor that keeps Markdown editable and renders human-optimized HTML.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:unit": "vitest run src/",
+    "test:shape": "vitest run src/tests/shape/",
+    "test:invariant": "vitest run src/tests/invariant/",
+    "test:visual": "playwright test --grep visual",
+    "test:e2e": "playwright test --grep e2e",
+    "test:all": "pnpm test:unit && pnpm test:visual && pnpm test:e2e"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "latest",
+    "@codemirror/state": "latest",
+    "@codemirror/view": "latest",
+    "@lezer/markdown": "latest",
+    "@vitejs/plugin-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "remark-gfm": "latest",
+    "unified": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
