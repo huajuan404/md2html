@@ -35,4 +35,5 @@ export const uiZh = {
   modelApplied: '已应用',
   modelFallback: '已回落',
   modelReused: '复用计划',
+  loadSample: '载入示例',
 } as const

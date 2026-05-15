@@ -120,6 +120,7 @@ test('e2e text-only edit reuses model plan without calling render-plan API', asy
     if (request.url().includes('/api/render-plan')) renderPlanRequests += 1
   })
   await page.goto('/')
+  await page.getByLabel('Markdown source').fill(readme)
   await page.getByLabel('Preset').selectOption('brief')
   await expect(page.getByTestId('model-status')).toContainText('Applied(mock)', { timeout: 10_000 })
   renderPlanRequests = 0
@@ -142,4 +143,17 @@ test('e2e structural edit and regenerate button call render-plan API', async ({ 
   const afterStructural = renderPlanRequests
   await page.getByRole('button', { name: 'Regenerate layout' }).click()
   await expect.poll(() => renderPlanRequests).toBeGreaterThan(afterStructural)
+})
+
+test('e2e load sample uses current UI language without auto-rewriting on UI switch', async ({ page }) => {
+  await page.goto('/')
+  await page.getByLabel('UI').selectOption('zh')
+  await page.getByRole('button', { name: '载入示例' }).click()
+  await expect(page.locator('.cm-content')).toContainText('Markdown 适合写')
+  const zhPreview = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
+  await page.getByLabel('界面').selectOption('en')
+  const afterSwitch = await page.locator('iframe[title="HTML projection preview"]').getAttribute('srcdoc')
+  expect(afterSwitch).toBe(zhPreview)
+  await page.getByRole('button', { name: 'Load sample' }).click()
+  await expect(page.locator('.cm-content')).toContainText('Markdown is for editing')
 })

@@ -5908,3 +5908,12 @@
 - Persisted UI language to localStorage.
 - Added E2E coverage for metadata export default, copy HTML, UI language persistence, text-only edit no model request, structural edit model request, and regenerate button forcing model request.
 - Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 12 tests.
+
+
+## 2026-05-15T10:53:40 — sample and UI persistence checkpoint
+
+- Added one-click sample loading with language-specific samples.
+- Default sample now follows persisted/default UI language when no local draft exists.
+- UI language persists across reloads.
+- Verified UI language switching itself still does not rewrite the current document or preview; loading a sample is explicit.
+- Verification: `pnpm build`, `pnpm test:unit`, `pnpm test:e2e` passed; E2E now 13 tests.

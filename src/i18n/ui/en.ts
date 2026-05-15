@@ -35,4 +35,5 @@ export const uiEn = {
   modelApplied: 'Applied',
   modelFallback: 'Fallback',
   modelReused: 'Reused',
+  loadSample: 'Load sample',
 } as const

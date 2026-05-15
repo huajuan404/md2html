@@ -5,6 +5,8 @@ import { extractSourceBlocks } from '../compiler/extractSourceBlocks'
 import type { CompileOptions, ContentLanguage, DensityId, LogicId, RenderPlan, ThemeId } from '../compiler/types'
 import { MarkdownEditor } from '../editor/MarkdownEditor'
 import { detectDefaultUiLanguage, getUiDict } from '../i18n'
+import { sampleEn } from '../i18n/samples/en'
+import { sampleZh } from '../i18n/samples/zh'
 import type { UiLanguage } from '../i18n/types'
 import readme from '../../fixtures/inputs/readme.md?raw'
 
@@ -145,6 +147,10 @@ export function App() {
     setAxes(presets[nextPreset])
   }
 
+  function loadSample() {
+    setMarkdown(uiLanguage === 'zh' ? sampleZh : sampleEn)
+  }
+
   function updateAxis<K extends keyof Axes>(key: K, value: Axes[K]) {
     setPreset('custom')
     setAxes((current) => ({ ...current, [key]: value }))
@@ -195,6 +201,7 @@ export function App() {
         <label>{t.theme}<select aria-label={t.theme} value={axes.theme} onChange={(event) => updateAxis('theme', event.target.value as ThemeId)}>
           <option value="editorial-light">{t.editorialLight}</option><option value="dense-brief">{t.denseBrief}</option><option value="dark-studio">{t.darkStudio}</option>
         </select></label>
+        <button type="button" onClick={loadSample}>{t.loadSample}</button>
         <button type="button" onClick={() => setRelayoutNonce((value) => value + 1)}>{t.relayout}</button>
         <label>{t.uiLanguage}<select aria-label={t.uiLanguage} value={uiLanguage} onChange={(event) => setUiLanguage(event.target.value as UiLanguage)}>
           <option value="zh">中</option><option value="en">EN</option>
@@ -225,7 +232,7 @@ function loadInitialUiLanguage(): UiLanguage {
 
 function loadInitialMarkdown(): string {
   if (typeof window === 'undefined') return readme
-  return window.localStorage.getItem(LOCAL_STORAGE_MARKDOWN_KEY) || readme
+  return window.localStorage.getItem(LOCAL_STORAGE_MARKDOWN_KEY) || (loadInitialUiLanguage() === 'zh' ? sampleZh : sampleEn)
 }
 
 function modelStatusText(modelStatus: ModelStatus, t: ReturnType<typeof getUiDict>): string {
